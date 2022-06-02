@@ -47,7 +47,12 @@ impl Scanner {
     }
 
     pub fn scan_token(&mut self) -> Result<(), LoxError> {
-        let c = self.advance();
+        let c = if let Some(c) = self.bump() {
+            c
+        } else {
+            return Ok(());
+        };
+
         match c {
             '(' => self.add_token(TokenType::LeftParen),
             ')' => self.add_token(TokenType::RightParen),
@@ -160,9 +165,13 @@ impl Scanner {
         self.current >= self.source.len()
     }
 
-    pub fn advance(&mut self) -> char {
-        let res = self.peek().unwrap();
+    pub fn advance(&mut self) {
         self.current += 1;
+    }
+
+    pub fn bump(&mut self) -> Option<char> {
+        let res = self.peek();
+        self.advance();
         res
     }
 
@@ -176,6 +185,7 @@ impl Scanner {
             .push(Token::new(ttype, lexeme, lit, self.line))
     }
 
+    /// If the next character matches the expected character, advance to it and then return true.
     pub fn is_match(&mut self, expected: char) -> bool {
         if self.peek().map_or(false, |cur| cur == expected) {
             self.current += 1;
