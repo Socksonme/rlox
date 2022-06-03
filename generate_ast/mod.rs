@@ -12,14 +12,14 @@ struct TreeType {
 
 pub fn generate_ast(output_dir: &str) -> io::Result<()> {
     define_ast(output_dir, "Expr", &[
-        "Binary   : Box<Expr> left, Token operator, Box<Expr> right".to_string(),
-        "Grouping : Box<Expr> expression".to_string(),
-        "Literal  : Lit value".to_string(),
-        "Unary    : Token operator".to_string(),
+        "Binary   : Box<Expr> left, Token operator, Box<Expr> right",
+        "Grouping : Box<Expr> expression",
+        "Literal  : Option<Lit> value",
+        "Unary    : Token operator, Box<Expr> right",
     ])
 }
 
-fn define_ast(output_dir: &str, base_name: &str, types: &[String]) -> io::Result<()> {
+fn define_ast(output_dir: &str, base_name: &str, types: &[&str]) -> io::Result<()> {
     let path = format!("{output_dir}/{}.rs", base_name.to_lowercase());
     let mut file = File::create(path)?;
     
@@ -45,10 +45,22 @@ fn define_ast(output_dir: &str, base_name: &str, types: &[String]) -> io::Result
     }
     writeln!(file, "}}\n")?;
 
+    writeln!(file, "impl {base_name} {{")?;
+    writeln!(file, "    pub fn accept<T>(&self, visitor: &dyn {}Visitor<T>) -> Result<T, LoxError> {{", base_name)?;
+    writeln!(file, "        match self {{")?;
+    for t in &tree_types {
+        writeln!(file, "            {}::{}({}) => {{", base_name, t.base_class_name, base_name.to_lowercase())?;
+        writeln!(file, "                {}.accept(visitor)", base_name.to_lowercase())?;
+        writeln!(file, "            }}")?;
+    }
+    writeln!(file, "        }}")?;
+    writeln!(file, "    }}")?;
+    writeln!(file, "}}\n")?;
+
     for t in &tree_types {
         writeln!(file, "pub struct {} {{", t.class_name)?;
         for f in &t.fields {
-            writeln!(file, "    {},", f)?;
+            writeln!(file, "    pub {},", f)?;
         }
         writeln!(file, "}}\n")?;
     }
@@ -64,7 +76,7 @@ fn define_ast(output_dir: &str, base_name: &str, types: &[String]) -> io::Result
 
     for t in &tree_types {
         writeln!(file, "impl {} {{", t.class_name)?;
-        writeln!(file, "    fn accept<T>(&self, visitor: &dyn {}Visitor<T>) -> Result<T, LoxError> {{", base_name)?;
+        writeln!(file, "    pub fn accept<T>(&self, visitor: &dyn {}Visitor<T>) -> Result<T, LoxError> {{", base_name)?;
         writeln!(file, "        visitor.visit_{}_{}(self)", t.base_class_name.to_lowercase(), base_name.to_lowercase())?;
         writeln!(file, "    }}")?;
         writeln!(file, "}}\n")?;

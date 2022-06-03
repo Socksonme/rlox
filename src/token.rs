@@ -27,10 +27,10 @@ impl Display for Lit {
 
 #[derive(Debug)]
 pub struct Token {
-    ttype: TokenType,
-    lexeme: String,
-    literal: Option<Lit>,
-    line: usize,
+    pub ttype: TokenType,
+    pub lexeme: String,
+    pub literal: Option<Lit>,
+    pub line: usize,
 }
 
 impl Token {
