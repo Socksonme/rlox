@@ -10,6 +10,13 @@ impl Parser {
         Self { tokens, current: 0 }
     }
 
+    pub fn parse(&mut self) -> Option<Expr> {
+        match self.expression() {
+            Ok(expr) => Some(expr),
+            Err(_) => None,
+        }
+    }
+
     fn expression(&mut self) -> Result<Expr, LoxError> {
         self.equality()
     }
@@ -121,7 +128,7 @@ impl Parser {
             )?;
             return Ok(Expr::Grouping(GroupingExpr { expression: expr }));
         }
-        Err(LoxError::error(0, "Failed primary parse".to_string()))
+        Err(LoxError::error(0, "Expect expression.".to_string()))
     }
 
     fn consume(&mut self, tt: TokenType, message: String) -> Result<Token, LoxError> {

@@ -23,7 +23,7 @@ impl Scanner {
         }
     }
 
-    pub fn scan_tokens(&mut self) -> Result<&Vec<Token>, LoxError> {
+    pub fn scan_tokens(&mut self) -> Result<Vec<Token>, LoxError> {
         let mut had_error = None;
 
         while !self.is_at_end() {
@@ -41,7 +41,7 @@ impl Scanner {
         if let Some(err) = had_error {
             Err(err)
         } else {
-            Ok(&self.tokens)
+            Ok(self.tokens.clone())
         }
     }
 

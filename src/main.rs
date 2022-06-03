@@ -4,6 +4,7 @@ pub mod parser;
 pub mod scanner;
 pub mod token;
 pub mod token_type;
+pub mod ast_printer;
 
 use std::{
     env::args,
@@ -12,9 +13,11 @@ use std::{
 };
 
 use error::*;
+use parser::Parser;
 use scanner::*;
 use token::*;
 use token_type::*;
+use ast_printer::AstPrinter;
 
 fn main() {
     let args = args().collect::<Vec<String>>();
@@ -69,10 +72,15 @@ pub fn run_prompt() -> io::Result<()> {
 pub fn run(source: String) -> Result<(), LoxError> {
     let mut scanner = Scanner::new(source);
     let tokens = scanner.scan_tokens()?;
+    let mut parser = Parser::new(tokens);
+    let expr = parser.parse();
 
-    for token in tokens {
-        println!("{:?}", token);
+    match expr {
+        Some(e) => {
+            let printer = AstPrinter {};
+            println!("{}", printer.format(&e)?);
+        }
+        None => {}
     }
-
     Ok(())
 }
