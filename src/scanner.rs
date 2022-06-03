@@ -31,14 +31,13 @@ impl Scanner {
             match self.scan_token() {
                 Ok(_) => {}
                 Err(e) => {
-                    e.report(String::new());
                     had_error = Some(e);
                 }
             }
         }
 
         self.tokens.push(Token::eof(self.line));
-    
+
         if let Some(err) = had_error {
             Err(err)
         } else {
@@ -71,7 +70,7 @@ impl Scanner {
                     TokenType::Bang
                 };
                 self.add_token(tok);
-            },
+            }
             '=' => {
                 let tok = if self.is_match('=') {
                     TokenType::EqualEqual
@@ -79,7 +78,7 @@ impl Scanner {
                     TokenType::Equal
                 };
                 self.add_token(tok);
-            },
+            }
             '<' => {
                 let tok = if self.is_match('=') {
                     TokenType::LessEqual
@@ -87,7 +86,7 @@ impl Scanner {
                     TokenType::Less
                 };
                 self.add_token(tok);
-            },
+            }
             '>' => {
                 let tok = if self.is_match('=') {
                     TokenType::GreaterEqual
@@ -95,7 +94,7 @@ impl Scanner {
                     TokenType::Greater
                 };
                 self.add_token(tok);
-            },
+            }
             '/' => {
                 if self.is_match('/') {
                     // A comment that goes until the end of the line
@@ -112,8 +111,10 @@ impl Scanner {
                     self.add_token(TokenType::Slash)
                 }
             }
-            ' ' | '\r'  | '\t' => {}
-            '\n' => {self.line += 1;}
+            ' ' | '\r' | '\t' => {}
+            '\n' => {
+                self.line += 1;
+            }
             '"' => {
                 self.string()?;
             }
@@ -152,7 +153,10 @@ impl Scanner {
                     self.line += 1;
                 }
                 None => {
-                    return Err(LoxError::error(self.line,String::from("Unterminated multi-line comment.")));
+                    return Err(LoxError::error(
+                        self.line,
+                        String::from("Unterminated multi-line comment."),
+                    ));
                 }
                 _ => {
                     self.advance();
@@ -181,8 +185,7 @@ impl Scanner {
 
     pub fn add_token_lit(&mut self, ttype: TokenType, lit: Option<Lit>) {
         let lexeme = String::from(&self.source[self.start..self.current]);
-        self.tokens
-            .push(Token::new(ttype, lexeme, lit, self.line))
+        self.tokens.push(Token::new(ttype, lexeme, lit, self.line))
     }
 
     /// If the next character matches the expected character, advance to it and then return true.
@@ -221,7 +224,10 @@ impl Scanner {
         }
         // If not at the end, then guranteed next to to be '"'
         if self.is_at_end() {
-            return Err(LoxError::error(self.line, String::from("Unterminated String.")));
+            return Err(LoxError::error(
+                self.line,
+                String::from("Unterminated String."),
+            ));
         }
         // TODO: Handle escape sequences such ads "\\" or "\n" etc.
         self.advance();
@@ -258,7 +264,7 @@ impl Scanner {
             }
         }
 
-        if let Some(c ) = self.peek() {
+        if let Some(c) = self.peek() {
             if c == '.' && self.peek_next().map_or(false, |pk| pk.is_numeric()) {
                 self.advance();
 
@@ -268,7 +274,12 @@ impl Scanner {
             }
         }
 
-        self.add_token_lit(TokenType::Number, Some(Lit::Num((&self.source[self.start..self.current]).parse().unwrap())));
+        self.add_token_lit(
+            TokenType::Number,
+            Some(Lit::Num(
+                (&self.source[self.start..self.current]).parse().unwrap(),
+            )),
+        );
         Ok(())
     }
 
