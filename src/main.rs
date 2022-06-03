@@ -1,10 +1,11 @@
+pub mod ast_printer;
 pub mod error;
 pub mod expr;
+pub mod interpreter;
 pub mod parser;
 pub mod scanner;
 pub mod token;
 pub mod token_type;
-pub mod ast_printer;
 
 use std::{
     env::args,
@@ -12,12 +13,12 @@ use std::{
     io::{self, BufRead, Read, Write},
 };
 
+use ast_printer::AstPrinter;
 use error::*;
 use parser::Parser;
 use scanner::*;
 use token::*;
 use token_type::*;
-use ast_printer::AstPrinter;
 
 fn main() {
     let args = args().collect::<Vec<String>>();

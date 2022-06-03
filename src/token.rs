@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::token_type::TokenType;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
     Num(f64),
     Str(String),
@@ -61,6 +61,9 @@ impl Token {
             literal: None,
             line,
         }
+    }
+    pub fn is(&self, tt: TokenType) -> bool {
+        self.ttype == tt
     }
 }
 

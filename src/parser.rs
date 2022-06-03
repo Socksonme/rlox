@@ -148,7 +148,7 @@ impl Parser {
         self.advance();
 
         while !self.is_at_end() {
-            if self.previous().ttype == TokenType::Semicolon {
+            if self.previous().is(TokenType::Semicolon) {
                 return;
             }
 
@@ -189,7 +189,7 @@ impl Parser {
     }
 
     fn is_at_end(&self) -> bool {
-        self.tokens[self.current].ttype == TokenType::Eof
+        self.tokens[self.current].is(TokenType::Eof)
     }
 
     fn advance(&mut self) -> Token {

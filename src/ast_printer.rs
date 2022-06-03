@@ -1,6 +1,7 @@
-use crate::{expr::{ExprVisitor, BinaryExpr, GroupingExpr, LiteralExpr, UnaryExpr, Expr}, error::LoxError};
-
-
+use crate::{
+    error::LoxError,
+    expr::{BinaryExpr, Expr, ExprVisitor, GroupingExpr, LiteralExpr, UnaryExpr},
+};
 
 pub struct AstPrinter;
 
