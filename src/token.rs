@@ -2,10 +2,13 @@ use std::fmt::Display;
 
 use crate::token_type::TokenType;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Lit {
     Num(f64),
     Str(String),
+    False,
+    True,
+    Nil,
 }
 
 impl Display for Lit {
@@ -20,12 +23,21 @@ impl Display for Lit {
                 Lit::Str(s) => {
                     s.clone()
                 }
+                Lit::False => {
+                    String::from("false")
+                }
+                Lit::True => {
+                    String::from("true")
+                }
+                Lit::Nil => {
+                    String::from("nil")
+                }
             }
         )
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
     pub ttype: TokenType,
     pub lexeme: String,
