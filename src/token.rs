@@ -1,41 +1,7 @@
 use std::fmt::Display;
 
+use crate::lit::*;
 use crate::token_type::TokenType;
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Lit {
-    Num(f64),
-    Str(String),
-    False,
-    True,
-    Nil,
-}
-
-impl Display for Lit {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Lit::Num(n) => {
-                    n.to_string()
-                }
-                Lit::Str(s) => {
-                    s.clone()
-                }
-                Lit::False => {
-                    String::from("false")
-                }
-                Lit::True => {
-                    String::from("true")
-                }
-                Lit::Nil => {
-                    String::from("nil")
-                }
-            }
-        )
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct Token {

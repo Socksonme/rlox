@@ -29,6 +29,7 @@ fn define_ast(output_dir: &str, base_name: &str, types: &[&str]) -> io::Result<(
 
     writeln!(file, "use crate::error::*;")?;
     writeln!(file, "use crate::token::*;")?;
+    writeln!(file, "use crate::lit::*;")?;
     let mut tree_types = Vec::new();
 
     for ttype in types {

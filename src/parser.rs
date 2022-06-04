@@ -1,4 +1,4 @@
-use crate::{error::*, expr::*, token::*, token_type::*};
+use crate::{error::*, expr::*, lit::*, token::*, token_type::*};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -102,11 +102,11 @@ impl Parser {
     fn primary(&mut self) -> Result<Expr, LoxError> {
         if self.matches(&[TokenType::False]) {
             return Ok(Expr::Literal(LiteralExpr {
-                value: Some(Lit::False),
+                value: Some(Lit::Bool(false)),
             }));
         } else if self.matches(&[TokenType::True]) {
             return Ok(Expr::Literal(LiteralExpr {
-                value: Some(Lit::True),
+                value: Some(Lit::Bool(true)),
             }));
         } else if self.matches(&[TokenType::Nil]) {
             return Ok(Expr::Literal(LiteralExpr {
@@ -122,10 +122,7 @@ impl Parser {
 
         if self.matches(&[TokenType::LeftParen]) {
             let expr = Box::new(self.expression()?);
-            self.consume(
-                TokenType::RightParen,
-                "Expect ')' after expression.",
-            )?;
+            self.consume(TokenType::RightParen, "Expect ')' after expression.")?;
             return Ok(Expr::Grouping(GroupingExpr { expression: expr }));
         }
         Err(LoxError::error(0, "Expect expression."))

@@ -2,6 +2,7 @@ pub mod ast_printer;
 pub mod error;
 pub mod expr;
 pub mod interpreter;
+pub mod lit;
 pub mod parser;
 pub mod scanner;
 pub mod token;
@@ -17,8 +18,7 @@ use ast_printer::AstPrinter;
 use error::*;
 use parser::Parser;
 use scanner::*;
-use token::*;
-use token_type::*;
+use interpreter::*;
 
 fn main() {
     let args = args().collect::<Vec<String>>();

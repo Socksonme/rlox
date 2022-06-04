@@ -1,6 +1,6 @@
 use crate::error::LoxError;
 use crate::expr::*;
-use crate::token::*;
+use crate::lit::*;
 use crate::token_type::TokenType;
 
 pub struct Interpreter {}
@@ -9,7 +9,7 @@ impl ExprVisitor<Lit> for Interpreter {
     fn visit_binary_expr(&self, expr: &BinaryExpr) -> Result<Lit, LoxError> {
         let left = self.evaluate(&expr.left);
         let right = self.evaluate(&expr.right);
-
+        
         Ok(Lit::Nil)
     }
     fn visit_unary_expr(&self, expr: &UnaryExpr) -> Result<Lit, LoxError> {
@@ -22,9 +22,9 @@ impl ExprVisitor<Lit> for Interpreter {
             },
             TokenType::Bang => {
                 if !self.is_truthy(right) {
-                    return Ok(Lit::True);
+                    return Ok(Lit::Bool(true));
                 } else {
-                    return Ok(Lit::False);
+                    return Ok(Lit::Bool(false));
                 }
             }
             _ => {}
@@ -45,6 +45,6 @@ impl Interpreter {
     }
     /// Returns `true` on everything excpet [`Lit::False`] and [`Lit::Nil`]
     fn is_truthy(&self, lit: Lit) -> bool {
-        !matches!(lit, Lit::False | Lit::Nil)   
+        !matches!(lit, Lit::Nil | Lit::Bool(false))
     }
 }

@@ -1,8 +1,4 @@
-use crate::{
-    error::LoxError,
-    token::{Lit, Token},
-    token_type::*,
-};
+use crate::{error::LoxError, lit::*, token::Token, token_type::*};
 
 pub struct Scanner {
     source: String,
@@ -125,10 +121,7 @@ impl Scanner {
                 self.identifier()?;
             }
             _ => {
-                return Err(LoxError::error(
-                    self.line,
-                    "Unexpected character.",
-                ));
+                return Err(LoxError::error(self.line, "Unexpected character."));
             }
         }
         Ok(())
@@ -224,10 +217,7 @@ impl Scanner {
         }
         // If not at the end, then guranteed next to to be '"'
         if self.is_at_end() {
-            return Err(LoxError::error(
-                self.line,
-                "Unterminated String.",
-            ));
+            return Err(LoxError::error(self.line, "Unterminated String."));
         }
         // TODO: Handle escape sequences such ads "\\" or "\n" etc.
         self.advance();
