@@ -64,7 +64,7 @@ impl Scanner {
             ';' => self.add_token(TokenType::Semicolon),
             '*' => self.add_token(TokenType::Star),
             '!' => {
-                let tok = if self.is_match('=') {
+                let tok = if self.matches('=') {
                     TokenType::BangEqual
                 } else {
                     TokenType::Bang
@@ -72,7 +72,7 @@ impl Scanner {
                 self.add_token(tok);
             }
             '=' => {
-                let tok = if self.is_match('=') {
+                let tok = if self.matches('=') {
                     TokenType::EqualEqual
                 } else {
                     TokenType::Equal
@@ -80,7 +80,7 @@ impl Scanner {
                 self.add_token(tok);
             }
             '<' => {
-                let tok = if self.is_match('=') {
+                let tok = if self.matches('=') {
                     TokenType::LessEqual
                 } else {
                     TokenType::Less
@@ -88,7 +88,7 @@ impl Scanner {
                 self.add_token(tok);
             }
             '>' => {
-                let tok = if self.is_match('=') {
+                let tok = if self.matches('=') {
                     TokenType::GreaterEqual
                 } else {
                     TokenType::Greater
@@ -96,7 +96,7 @@ impl Scanner {
                 self.add_token(tok);
             }
             '/' => {
-                if self.is_match('/') {
+                if self.matches('/') {
                     // A comment that goes until the end of the line
                     while let Some(pk) = self.peek() {
                         if pk == '\n' {
@@ -104,7 +104,7 @@ impl Scanner {
                         }
                         self.advance();
                     }
-                } else if self.is_match('*') {
+                } else if self.matches('*') {
                     // block comment start
                     self.scan_comment()?;
                 } else {
@@ -127,7 +127,7 @@ impl Scanner {
             _ => {
                 return Err(LoxError::error(
                     self.line,
-                    String::from("Unexpected character."),
+                    "Unexpected character.",
                 ));
             }
         }
@@ -139,13 +139,13 @@ impl Scanner {
             match self.peek() {
                 Some('*') => {
                     self.advance();
-                    if self.is_match('/') {
+                    if self.matches('/') {
                         return Ok(());
                     }
                 }
                 Some('/') => {
                     self.advance();
-                    if self.is_match('*') {
+                    if self.matches('*') {
                         self.scan_comment()?;
                     }
                 }
@@ -155,7 +155,7 @@ impl Scanner {
                 None => {
                     return Err(LoxError::error(
                         self.line,
-                        String::from("Unterminated multi-line comment."),
+                        "Unterminated multi-line comment.",
                     ));
                 }
                 _ => {
@@ -165,31 +165,31 @@ impl Scanner {
         }
     }
 
-    pub fn is_at_end(&self) -> bool {
+    fn is_at_end(&self) -> bool {
         self.current >= self.source.len()
     }
 
-    pub fn advance(&mut self) {
+    fn advance(&mut self) {
         self.current += 1;
     }
 
-    pub fn bump(&mut self) -> Option<char> {
+    fn bump(&mut self) -> Option<char> {
         let res = self.peek();
         self.advance();
         res
     }
 
-    pub fn add_token(&mut self, ttype: TokenType) {
+    fn add_token(&mut self, ttype: TokenType) {
         self.add_token_lit(ttype, None);
     }
 
-    pub fn add_token_lit(&mut self, ttype: TokenType, lit: Option<Lit>) {
+    fn add_token_lit(&mut self, ttype: TokenType, lit: Option<Lit>) {
         let lexeme = String::from(&self.source[self.start..self.current]);
         self.tokens.push(Token::new(ttype, lexeme, lit, self.line))
     }
 
     /// If the next character matches the expected character, advance to it and then return true.
-    pub fn is_match(&mut self, expected: char) -> bool {
+    fn matches(&mut self, expected: char) -> bool {
         if self.peek().map_or(false, |cur| cur == expected) {
             self.current += 1;
             return true;
@@ -226,7 +226,7 @@ impl Scanner {
         if self.is_at_end() {
             return Err(LoxError::error(
                 self.line,
-                String::from("Unterminated String."),
+                "Unterminated String.",
             ));
         }
         // TODO: Handle escape sequences such ads "\\" or "\n" etc.

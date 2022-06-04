@@ -29,13 +29,13 @@ impl ExprVisitor<Lit> for Interpreter {
             }
             _ => {}
         }
-        Err(LoxError::error(0, "Unreachable code.".to_string()))
+        Err(LoxError::error(0, "Unreachable code."))
     }
     fn visit_grouping_expr(&self, expr: &GroupingExpr) -> Result<Lit, LoxError> {
         self.evaluate(&expr.expression)
     }
     fn visit_literal_expr(&self, expr: &LiteralExpr) -> Result<Lit, LoxError> {
-        Ok(expr.value.clone().unwrap_or(Lit::Nil))
+        Ok(expr.value.clone().unwrap())
     }
 }
 
@@ -43,10 +43,8 @@ impl Interpreter {
     pub fn evaluate(&self, expr: &Expr) -> Result<Lit, LoxError> {
         expr.accept(self)
     }
+    /// Returns `true` on everything excpet [`Lit::False`] and [`Lit::Nil`]
     fn is_truthy(&self, lit: Lit) -> bool {
-        match lit {
-            Lit::False | Lit::Nil => false,
-            _ => true
-        }
+        !matches!(lit, Lit::False | Lit::Nil)   
     }
 }

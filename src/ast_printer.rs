@@ -10,7 +10,7 @@ impl AstPrinter {
         expr.accept(self)
     }
 
-    fn parenthesize(&self, name: &str, exprs: &[&Box<Expr>]) -> Result<String, LoxError> {
+    fn parenthesize(&self, name: &str, exprs: &[&Expr]) -> Result<String, LoxError> {
         let mut builder = format!("({name}");
 
         for expr in exprs {
@@ -29,9 +29,9 @@ impl ExprVisitor<String> for AstPrinter {
     }
     fn visit_literal_expr(&self, expr: &LiteralExpr) -> Result<String, LoxError> {
         if let Some(val) = &expr.value {
-            return Ok(val.to_string());
+            Ok(val.to_string())
         } else {
-            return Ok("nil".to_string());
+            Ok("nil".to_string())
         }
     }
     fn visit_unary_expr(&self, expr: &UnaryExpr) -> Result<String, LoxError> {

@@ -24,7 +24,7 @@ impl Parser {
     fn equality(&mut self) -> Result<Expr, LoxError> {
         let mut expr = self.comparison()?;
 
-        while self.is_match(&[TokenType::BangEqual, TokenType::EqualEqual]) {
+        while self.matches(&[TokenType::BangEqual, TokenType::EqualEqual]) {
             let operator = self.previous();
             let right = Box::new(self.comparison()?);
             expr = Expr::Binary(BinaryExpr {
@@ -40,7 +40,7 @@ impl Parser {
     fn comparison(&mut self) -> Result<Expr, LoxError> {
         let mut expr = self.term()?;
 
-        while self.is_match(&[
+        while self.matches(&[
             TokenType::Greater,
             TokenType::GreaterEqual,
             TokenType::Less,
@@ -61,7 +61,7 @@ impl Parser {
     fn term(&mut self) -> Result<Expr, LoxError> {
         let mut expr = self.factor()?;
 
-        while self.is_match(&[TokenType::Plus, TokenType::Minus]) {
+        while self.matches(&[TokenType::Plus, TokenType::Minus]) {
             let operator = self.previous();
             let right = Box::new(self.factor()?);
             expr = Expr::Binary(BinaryExpr {
@@ -77,7 +77,7 @@ impl Parser {
     fn factor(&mut self) -> Result<Expr, LoxError> {
         let mut expr = self.unary()?;
 
-        while self.is_match(&[TokenType::Slash, TokenType::Star]) {
+        while self.matches(&[TokenType::Slash, TokenType::Star]) {
             let operator = self.previous();
             let right = Box::new(self.unary()?);
             expr = Expr::Binary(BinaryExpr {
@@ -91,7 +91,7 @@ impl Parser {
     }
 
     fn unary(&mut self) -> Result<Expr, LoxError> {
-        if self.is_match(&[TokenType::Bang, TokenType::Minus]) {
+        if self.matches(&[TokenType::Bang, TokenType::Minus]) {
             let operator = self.previous();
             let right = Box::new(self.unary()?);
             return Ok(Expr::Unary(UnaryExpr { operator, right }));
@@ -100,48 +100,48 @@ impl Parser {
     }
 
     fn primary(&mut self) -> Result<Expr, LoxError> {
-        if self.is_match(&[TokenType::False]) {
+        if self.matches(&[TokenType::False]) {
             return Ok(Expr::Literal(LiteralExpr {
                 value: Some(Lit::False),
             }));
-        } else if self.is_match(&[TokenType::True]) {
+        } else if self.matches(&[TokenType::True]) {
             return Ok(Expr::Literal(LiteralExpr {
                 value: Some(Lit::True),
             }));
-        } else if self.is_match(&[TokenType::Nil]) {
+        } else if self.matches(&[TokenType::Nil]) {
             return Ok(Expr::Literal(LiteralExpr {
                 value: Some(Lit::Nil),
             }));
         }
 
-        if self.is_match(&[TokenType::Number, TokenType::String]) {
+        if self.matches(&[TokenType::Number, TokenType::String]) {
             return Ok(Expr::Literal(LiteralExpr {
                 value: self.previous().literal,
             }));
         }
 
-        if self.is_match(&[TokenType::LeftParen]) {
+        if self.matches(&[TokenType::LeftParen]) {
             let expr = Box::new(self.expression()?);
             self.consume(
                 TokenType::RightParen,
-                "Expect ')' after expression.".to_string(),
+                "Expect ')' after expression.",
             )?;
             return Ok(Expr::Grouping(GroupingExpr { expression: expr }));
         }
-        Err(LoxError::error(0, "Expect expression.".to_string()))
+        Err(LoxError::error(0, "Expect expression."))
     }
 
-    fn consume(&mut self, tt: TokenType, message: String) -> Result<Token, LoxError> {
+    fn consume(&mut self, tt: TokenType, message: &str) -> Result<Token, LoxError> {
         if self.check(&tt) {
             Ok(self.advance())
         } else {
             let p = self.peek();
-            Err(LoxError::error(p.line, message))
+            Err(Self::error(p, message))
         }
     }
 
-    fn error(t: Token, message: String) -> Result<(), LoxError> {
-        Err(LoxError::parse_error(t, message))
+    fn error(t: Token, message: &str) -> LoxError {
+        LoxError::parse_error(t, message)
     }
 
     fn synchronize(&mut self) {
@@ -169,7 +169,7 @@ impl Parser {
         }
     }
 
-    fn is_match(&mut self, ttypes: &[TokenType]) -> bool {
+    fn matches(&mut self, ttypes: &[TokenType]) -> bool {
         for tt in ttypes {
             if self.check(tt) {
                 self.advance();
