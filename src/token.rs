@@ -12,10 +12,10 @@ pub struct Token {
 }
 
 impl Token {
-    pub fn new(ttype: TokenType, lexeme: String, literal: Option<Lit>, line: usize) -> Self {
+    pub fn new(ttype: TokenType, lexeme: &str, literal: Option<Lit>, line: usize) -> Self {
         Self {
             ttype,
-            lexeme,
+            lexeme: lexeme.to_string(),
             literal,
             line,
         }

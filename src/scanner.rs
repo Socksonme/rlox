@@ -177,7 +177,7 @@ impl Scanner {
     }
 
     fn add_token_lit(&mut self, ttype: TokenType, lit: Option<Lit>) {
-        let lexeme = String::from(&self.source[self.start..self.current]);
+        let lexeme = &self.source[self.start..self.current];
         self.tokens.push(Token::new(ttype, lexeme, lit, self.line))
     }
 

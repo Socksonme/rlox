@@ -16,9 +16,9 @@ use std::{
 
 use ast_printer::AstPrinter;
 use error::*;
+use interpreter::*;
 use parser::Parser;
 use scanner::*;
-use interpreter::*;
 
 fn main() {
     let args = args().collect::<Vec<String>>();
