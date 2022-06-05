@@ -14,16 +14,28 @@ impl ExprVisitor<Lit> for Interpreter {
 
         match expr.operator.ttype {
             TokenType::Minus => {
-                return left - right;
+                match left - right {
+                    Ok(l) => return Ok(l),
+                    Err(e) => return Err(LoxError::runtime_error(expr.operator.clone(), &e.message)),
+                }
             }
             TokenType::Slash => {
-                return left / right;
+                match left / right {
+                    Ok(l) => return Ok(l),
+                    Err(e) => return Err(LoxError::runtime_error(expr.operator.clone(), &e.message)),
+                }
             }
             TokenType::Star => {
-                return left * right;
+                match left * right {
+                    Ok(l) => return Ok(l),
+                    Err(e) => return Err(LoxError::runtime_error(expr.operator.clone(), &e.message)),
+                }
             }
             TokenType::Plus => {
-                return left + right;
+                match left + right {
+                    Ok(l) => return Ok(l),
+                    Err(e) => return Err(LoxError::runtime_error(expr.operator.clone(), &e.message)),
+                }
             }
             TokenType::Greater => {
                 return Ok(Lit::Bool(left > right));

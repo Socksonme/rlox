@@ -4,7 +4,7 @@ use crate::{token::Token, token_type::TokenType};
 pub struct LoxError {
     token: Option<Token>,
     line: usize,
-    message: String,
+    pub message: String,
 }
 
 impl LoxError {
@@ -19,6 +19,16 @@ impl LoxError {
     }
 
     pub fn parse_error(token: Token, message: &str) -> LoxError {
+        let err = LoxError {
+            line: token.line,
+            token: Some(token),
+            message: message.to_string(),
+        };
+        err.report("");
+        err
+    }
+
+    pub fn runtime_error(token: Token, message: &str) -> LoxError {
         let err = LoxError {
             line: token.line,
             token: Some(token),

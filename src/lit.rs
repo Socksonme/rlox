@@ -50,7 +50,7 @@ impl Sub for Lit {
     fn sub(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Lit::Num(a), Lit::Num(b)) => Ok(Lit::Num(a - b)),
-            _ => Err(LoxError::error(0, "Invalid expression."))
+            _ => Err(LoxError::error(0, "Illegal expression."))
         }
     }
 }
@@ -60,7 +60,7 @@ impl Div for Lit {
     fn div(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Lit::Num(a), Lit::Num(b)) => Ok(Lit::Num(a / b)),
-            _ => Err(LoxError::error(0, "Invalid expression."))
+            _ => Err(LoxError::error(0, "Illegal expression."))
         }
     }
 }
@@ -70,7 +70,7 @@ impl Mul for Lit {
     fn mul(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Lit::Num(a), Lit::Num(b)) => Ok(Lit::Num(a * b)),
-            _ => Err(LoxError::error(0, "Invalid expression."))
+            _ => Err(LoxError::error(0, "Illegal expression."))
         }
     }
 }
@@ -81,7 +81,7 @@ impl Add for Lit {
         match (self, rhs) {
             (Lit::Num(a), Lit::Num(b)) => Ok(Lit::Num(a + b)),
             (Lit::Str(a), Lit::Str(b)) => Ok(Lit::Str(format!("{}{}", a, b))),
-            _ => Err(LoxError::error(0, "Invalid expression.")),
+            _ => Err(LoxError::error(0, "Illegal expression.")),
         }
     }
 }
