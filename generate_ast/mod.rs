@@ -14,22 +14,43 @@ pub fn generate_ast(output_dir: &str) -> io::Result<()> {
     define_ast(
         output_dir,
         "Expr",
+        &["use crate::error::*;", "use crate::token::*;", "use crate::lit::*;"],
         &[
             "Binary   : Box<Expr> left, Token operator, Box<Expr> right",
             "Grouping : Box<Expr> expression",
             "Literal  : Option<Lit> value",
             "Unary    : Token operator, Box<Expr> right",
         ],
+    )?;
+    define_ast(
+        output_dir,
+        "Stmt",
+        &[
+            "use crate::error::*;",
+            // "use crate::token::*;",
+            // "use crate::lit::*;",
+            "use crate::expr::*;",
+        ],
+        &[
+            "Expression   : Expr expression",
+            "Print        : Expr expression",
+        ],
     )
 }
 
-fn define_ast(output_dir: &str, base_name: &str, types: &[&str]) -> io::Result<()> {
+fn define_ast(
+    output_dir: &str,
+    base_name: &str,
+    imports: &[&str],
+    types: &[&str],
+) -> io::Result<()> {
     let path = format!("{output_dir}/{}.rs", base_name.to_lowercase());
     let mut file = File::create(path)?;
 
-    writeln!(file, "use crate::error::*;")?;
-    writeln!(file, "use crate::token::*;")?;
-    writeln!(file, "use crate::lit::*;")?;
+    for import in imports {
+        writeln!(file, "{}", import)?;
+    }
+
     let mut tree_types = Vec::new();
 
     for ttype in types {

@@ -1,3 +1,4 @@
-10 * 3 / 5 / 6 - 10 + 5; // awdawdf
-/* nest 1 /* nest 2 */ nest 1*/ (10 + 20 < 38)
-(30 == 10 + 20)
+print 10 + 10;
+print "a" + "bcdef";
+print true;
+10+10;

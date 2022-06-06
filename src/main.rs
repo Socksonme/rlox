@@ -1,10 +1,11 @@
-pub mod ast_printer;
+//pub mod ast_printer;
 pub mod error;
 pub mod expr;
 pub mod interpreter;
 pub mod lit;
 pub mod parser;
 pub mod scanner;
+pub mod stmt;
 pub mod token;
 pub mod token_type;
 
@@ -14,7 +15,7 @@ use std::{
     io::{self, BufRead, Read, Write},
 };
 
-use ast_printer::AstPrinter;
+//use ast_printer::AstPrinter;
 use error::*;
 use interpreter::*;
 use parser::Parser;
@@ -22,7 +23,7 @@ use scanner::*;
 
 fn main() {
     let args = args().collect::<Vec<String>>();
-    let lox = Lox::new(Interpreter { });
+    let lox = Lox::new(Interpreter {});
     match args.len() {
         1 => {
             lox.run_prompt().unwrap();
@@ -42,11 +43,8 @@ struct Lox {
 }
 
 impl Lox {
-
     pub fn new(interpreter: Interpreter) -> Self {
-        Self {
-            interpreter
-        }
+        Self { interpreter }
     }
 
     pub fn run_file(&self, path: &str) -> io::Result<()> {
@@ -58,11 +56,11 @@ impl Lox {
         }
         Ok(())
     }
-    
+
     pub fn run_prompt(&self) -> io::Result<()> {
         let stdin = std::io::stdin();
         let handle = stdin.lock();
-    
+
         print!("> ");
         std::io::stdout().flush().unwrap();
         for line in handle.lines() {
@@ -79,25 +77,20 @@ impl Lox {
                 break;
             }
         }
-    
+
         Ok(())
     }
-    
+
     pub fn run(&self, source: String) -> Result<(), LoxError> {
         let mut scanner = Scanner::new(source);
         let tokens = scanner.scan_tokens()?;
         let mut parser = Parser::new(tokens);
-        let expr = parser.parse();
-    
-        match expr {
-            Some(e) => {
-                let printer = AstPrinter {};
-                println!("{}", printer.format(&e)?);
-                self.interpreter.interpret(&e);
-            }
-            None => {}
+        let statements = parser.parse()?;
+
+        if self.interpreter.interpret(&statements) {
+            Ok(())
+        } else {
+            Err(LoxError::error(0, ""))
         }
-        Ok(())
     }
 }
-

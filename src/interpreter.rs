@@ -2,8 +2,21 @@ use crate::error::LoxError;
 use crate::expr::*;
 use crate::lit::*;
 use crate::token_type::TokenType;
+use crate::stmt::*;
 
 pub struct Interpreter {}
+
+impl StmtVisitor<()> for Interpreter {
+    fn visit_expression_stmt(&self, expr: &ExpressionStmt) -> Result<(), LoxError> {
+        self.evaluate(&expr.expression)?;
+        Ok(())
+    }
+    fn visit_print_stmt(&self, expr: &PrintStmt) -> Result<(), LoxError> {
+        let value = self.evaluate(&expr.expression)?;
+        println!("{}", value);
+        Ok(())
+    }
+}
 
 impl ExprVisitor<Lit> for Interpreter {
     fn visit_binary_expr(&self, expr: &BinaryExpr) -> Result<Lit, LoxError> {
@@ -12,61 +25,65 @@ impl ExprVisitor<Lit> for Interpreter {
 
         // This still doesnt work with EqualEqual, kek
         match expr.operator.ttype {
-            TokenType::Plus => {
-                match (left, right) {
-                    (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Num(left + right)),
-                    (Lit::Str(left), Lit::Str(right)) => Ok(Lit::Str(format!("{}{}", left, right))),
-                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Expected two numbers or two strings."))
-                }
-            }
-            TokenType::Minus => {
-                match (left, right) {
-                    (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Num(left - right)),
-                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Expected two numbers."))
-                }
-            }
-            TokenType::Star => {
-                match (left, right) {
-                    (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Num(left * right)),
-                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Expected two numbers."))
-                }
-            }
-            TokenType::Slash => {
-                match (left, right) {
-                    (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Num(left / right)),
-                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Expected two numbers."))
-                }
-            }
-            TokenType::Greater => {
-                match (left, right) {
-                    (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Bool(left > right)),
-                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Expected two numbers."))
-                }
-            }
-            TokenType::GreaterEqual => {
-                match (left, right) {
-                    (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Bool(left >= right)),
-                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Expected two numbers."))
-                }
-            }
-            TokenType::Less => {
-                match (left, right) {
-                    (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Bool(left < right)),
-                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Expected two numbers."))
-                }
-            }
-            TokenType::LessEqual => {
-                match (left, right) {
-                    (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Bool(left <= right)),
-                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Expected two numbers."))
-                }
-            }
-            TokenType::EqualEqual => {
-                Ok(Lit::Bool(left == right))
-            }
-            TokenType::BangEqual => {
-                Ok(Lit::Bool(left != right))
-            }
+            TokenType::Plus => match (left, right) {
+                (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Num(left + right)),
+                (Lit::Str(left), Lit::Str(right)) => Ok(Lit::Str(format!("{}{}", left, right))),
+                _ => Err(LoxError::runtime_error(
+                    expr.operator.clone(),
+                    "Expected two numbers or two strings.",
+                )),
+            },
+            TokenType::Minus => match (left, right) {
+                (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Num(left - right)),
+                _ => Err(LoxError::runtime_error(
+                    expr.operator.clone(),
+                    "Expected two numbers.",
+                )),
+            },
+            TokenType::Star => match (left, right) {
+                (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Num(left * right)),
+                _ => Err(LoxError::runtime_error(
+                    expr.operator.clone(),
+                    "Expected two numbers.",
+                )),
+            },
+            TokenType::Slash => match (left, right) {
+                (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Num(left / right)),
+                _ => Err(LoxError::runtime_error(
+                    expr.operator.clone(),
+                    "Expected two numbers.",
+                )),
+            },
+            TokenType::Greater => match (left, right) {
+                (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Bool(left > right)),
+                _ => Err(LoxError::runtime_error(
+                    expr.operator.clone(),
+                    "Expected two numbers.",
+                )),
+            },
+            TokenType::GreaterEqual => match (left, right) {
+                (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Bool(left >= right)),
+                _ => Err(LoxError::runtime_error(
+                    expr.operator.clone(),
+                    "Expected two numbers.",
+                )),
+            },
+            TokenType::Less => match (left, right) {
+                (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Bool(left < right)),
+                _ => Err(LoxError::runtime_error(
+                    expr.operator.clone(),
+                    "Expected two numbers.",
+                )),
+            },
+            TokenType::LessEqual => match (left, right) {
+                (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Bool(left <= right)),
+                _ => Err(LoxError::runtime_error(
+                    expr.operator.clone(),
+                    "Expected two numbers.",
+                )),
+            },
+            TokenType::EqualEqual => Ok(Lit::Bool(left == right)),
+            TokenType::BangEqual => Ok(Lit::Bool(left != right)),
             _ => Err(LoxError::runtime_error(
                 expr.operator.clone(),
                 "Illegal expression.",
@@ -102,17 +119,19 @@ impl Interpreter {
         expr.accept(self)
     }
 
-    pub fn interpret(&self, expr: &Expr) -> bool {
-        match self.evaluate(expr) {
-            Ok(v) => {
-                println!("{}", v);
-                true
-            }
-            Err(e) => {
+    pub fn execute(&self, statement: &Stmt) -> Result<(), LoxError> {
+        statement.accept(self)
+    }
+
+    /// Returns `true` on success
+    pub fn interpret(&self, statements: &[Stmt]) -> bool {
+        for statement in statements {
+            if let Err(e) = self.execute(statement) {
                 e.report("");
-                false
+                return false;
             }
         }
+        true
     }
 }
 
