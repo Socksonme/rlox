@@ -3,17 +3,18 @@ use crate::{error::*, expr::*, lit::*, token::*, token_type::*, stmt::*};
 pub struct Parser {
     tokens: Vec<Token>,
     current: usize,
+    had_error: bool,
 }
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        Self { tokens, current: 0 }
+        Self { tokens, current: 0, had_error: false }
     }
 
     pub fn parse(&mut self) -> Result<Vec<Stmt>, LoxError> {
         let mut statements = Vec::new();
         while !self.is_at_end() {
-            statements.push(self.statement()?);
+            statements.push(self.declaration()?);
         }
 
         Ok(statements)
@@ -39,7 +40,50 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Result<Expr, LoxError> {
-        self.equality()
+        self.assignment()
+    }
+
+    fn declaration(&mut self) -> Result<Stmt, LoxError> {
+        let result = if self.matches(&[TokenType::Var]) {
+            self.var_declaration()
+        } else {
+            self.statement()
+        };
+
+        if result.is_err() {
+            self.synchronize();
+        }
+
+        result
+    }
+
+    fn var_declaration(&mut self) -> Result<Stmt, LoxError> {
+        let name = self.consume(TokenType::Identifier, "Expect variable name.")?;
+
+        let initializer = if self.matches(&[TokenType::Equal]) {
+            Some(self.expression()?)
+        } else {
+            None
+        };
+
+        self.consume(TokenType::Semicolon, "Expected ';' after variable declaration.")?;
+        Ok(Stmt::Var(VarStmt {name, initializer}))
+    }
+
+    fn assignment(&mut self) -> Result<Expr, LoxError> {
+        let expr = self.equality()?;
+
+        if self.matches(&[TokenType::Equal]) {
+            let equals = self.previous();
+            let value = self.expression()?;
+
+            // Check if expr is a valid l-value (VariableExpr, aka identifier)
+            if let Expr::Variable(v) = expr {
+                return Ok(Expr::Assign(AssignExpr {name: v.name, value: Box::new(value)}));
+            }
+            self.error(equals, "Invalid assignment target.");
+        }
+        Ok(expr)
     }
 
     fn equality(&mut self) -> Result<Expr, LoxError> {
@@ -141,6 +185,12 @@ impl Parser {
             }));
         }
 
+        if self.matches(&[TokenType::Identifier]) {
+            return Ok(Expr::Variable(VariableExpr {
+                name: self.previous(),
+            }));
+        }
+
         if self.matches(&[TokenType::LeftParen]) {
             let expr = Box::new(self.expression()?);
             self.consume(TokenType::RightParen, "Expect ')' after expression.")?;
@@ -154,11 +204,12 @@ impl Parser {
             Ok(self.advance())
         } else {
             let p = self.peek();
-            Err(Self::error(p, message))
+            Err(self.error(p, message))
         }
     }
 
-    fn error(t: Token, message: &str) -> LoxError {
+    fn error(&mut self, t: Token, message: &str) -> LoxError {
+        self.had_error = true;
         LoxError::parse_error(t, message)
     }
 
@@ -196,6 +247,10 @@ impl Parser {
         }
 
         false
+    }
+
+    pub fn success(&self) -> bool {
+        !self.had_error
     }
 
     fn check(&self, tt: &TokenType) -> bool {

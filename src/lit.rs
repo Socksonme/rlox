@@ -17,7 +17,7 @@ impl Display for Lit {
                     n.to_string()
                 }
                 Lit::Str(s) => {
-                    s.clone()
+                    format!("\"{}\"", s.clone())
                 }
                 Lit::Bool(b) => {
                     b.to_string()

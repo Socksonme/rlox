@@ -1,19 +1,40 @@
+use std::cell::RefCell;
+
+use crate::environment::Environment;
 use crate::error::LoxError;
 use crate::expr::*;
 use crate::lit::*;
 use crate::token_type::TokenType;
 use crate::stmt::*;
 
-pub struct Interpreter {}
+pub struct Interpreter {
+    environment: RefCell<Environment>,
+}
+
+impl Default for Interpreter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl StmtVisitor<()> for Interpreter {
-    fn visit_expression_stmt(&self, expr: &ExpressionStmt) -> Result<(), LoxError> {
-        self.evaluate(&expr.expression)?;
+    fn visit_expression_stmt(&self, stmt: &ExpressionStmt) -> Result<(), LoxError> {
+        self.evaluate(&stmt.expression)?;
         Ok(())
     }
-    fn visit_print_stmt(&self, expr: &PrintStmt) -> Result<(), LoxError> {
-        let value = self.evaluate(&expr.expression)?;
+    fn visit_print_stmt(&self, stmt: &PrintStmt) -> Result<(), LoxError> {
+        let value = self.evaluate(&stmt.expression)?;
         println!("{}", value);
+        Ok(())
+    }
+    fn visit_var_stmt(&self, stmt: &VarStmt) -> Result<(), LoxError> {
+        let value = if let Some(init) = &stmt.initializer {
+            Some(self.evaluate(init)?)
+        } else {
+            None
+        };
+
+        self.environment.borrow_mut().define(&stmt.name.lexeme, value.unwrap_or(Lit::Nil));
         Ok(())
     }
 }
@@ -112,9 +133,23 @@ impl ExprVisitor<Lit> for Interpreter {
     fn visit_literal_expr(&self, expr: &LiteralExpr) -> Result<Lit, LoxError> {
         Ok(expr.value.clone().unwrap())
     }
+    fn visit_variable_expr(&self, expr: &VariableExpr) -> Result<Lit, LoxError> {
+        self.environment.borrow().get(&expr.name)
+    }
+    fn visit_assign_expr(&self, expr: &AssignExpr) -> Result<Lit, LoxError> {
+        let value = self.evaluate(&expr.value)?;
+        self.environment.borrow_mut().assign(&expr.name, value.clone())?;
+        Ok(value)
+    }
 }
 
 impl Interpreter {
+    pub fn new() -> Self {
+        Self {
+            environment: RefCell::new(Environment::new())
+        }
+    }
+
     pub fn evaluate(&self, expr: &Expr) -> Result<Lit, LoxError> {
         expr.accept(self)
     }
@@ -126,8 +161,7 @@ impl Interpreter {
     /// Returns `true` on success
     pub fn interpret(&self, statements: &[Stmt]) -> bool {
         for statement in statements {
-            if let Err(e) = self.execute(statement) {
-                e.report("");
+            if self.execute(statement).is_err() {
                 return false;
             }
         }
@@ -167,7 +201,7 @@ mod tests {
 
     #[test]
     fn test_unary_minus() {
-        let interpreter = Interpreter {};
+        let interpreter = Interpreter::new();
         let unary_expr = Expr::Unary(UnaryExpr {
             operator: Token::new(TokenType::Minus, "-", None, 0),
             right: make_literal_num_expr(10.0),
@@ -179,7 +213,7 @@ mod tests {
 
     #[test]
     fn test_unary_not() {
-        let interpreter = Interpreter {};
+        let interpreter = Interpreter::new();
         let unary_expr = Expr::Unary(UnaryExpr {
             operator: Token::new(TokenType::Bang, "!", None, 0),
             right: make_literal_bool_expr(false),
@@ -191,7 +225,7 @@ mod tests {
 
     #[test]
     fn test_binary_sub() {
-        let interpreter = Interpreter {};
+        let interpreter = Interpreter::new();
         let binary_expr = Expr::Binary(BinaryExpr {
             operator: Token::new(TokenType::Minus, "-", None, 0),
             left: make_literal_num_expr(10.0),
@@ -204,7 +238,7 @@ mod tests {
 
     #[test]
     fn test_binary_mul() {
-        let interpreter = Interpreter {};
+        let interpreter = Interpreter::new();
         let binary_expr = Expr::Binary(BinaryExpr {
             operator: Token::new(TokenType::Star, "*", None, 0),
             left: make_literal_num_expr(10.0),
@@ -217,7 +251,7 @@ mod tests {
 
     #[test]
     fn test_binary_div() {
-        let interpreter = Interpreter {};
+        let interpreter = Interpreter::new();
         let binary_expr = Expr::Binary(BinaryExpr {
             operator: Token::new(TokenType::Slash, "/", None, 0),
             left: make_literal_num_expr(10.0),
@@ -230,7 +264,7 @@ mod tests {
 
     #[test]
     fn test_binary_add() {
-        let interpreter = Interpreter {};
+        let interpreter = Interpreter::new();
         let binary_expr = Expr::Binary(BinaryExpr {
             operator: Token::new(TokenType::Plus, "+", None, 0),
             left: make_literal_num_expr(10.0),
@@ -243,7 +277,7 @@ mod tests {
 
     #[test]
     fn test_binary_concat() {
-        let interpreter = Interpreter {};
+        let interpreter = Interpreter::new();
         let binary_expr = Expr::Binary(BinaryExpr {
             operator: Token::new(TokenType::Plus, "+", None, 0),
             left: make_literal_str_expr("abcdef"),
@@ -256,7 +290,7 @@ mod tests {
 
     #[test]
     fn test_error_str_num_binary_concat() {
-        let interpreter = Interpreter {};
+        let interpreter = Interpreter::new();
         let binary_expr = Expr::Binary(BinaryExpr {
             operator: Token::new(TokenType::Plus, "+", None, 0),
             left: make_literal_str_expr("abcdef"),
@@ -268,7 +302,7 @@ mod tests {
 
     #[test]
     fn test_binary_greater_than() {
-        let interpreter = Interpreter {};
+        let interpreter = Interpreter::new();
         let binary_expr = Expr::Binary(BinaryExpr {
             operator: Token::new(TokenType::Greater, ">", None, 0),
             left: make_literal_num_expr(10.0),
@@ -281,7 +315,7 @@ mod tests {
 
     #[test]
     fn test_binary_less_than() {
-        let interpreter = Interpreter {};
+        let interpreter = Interpreter::new();
         let binary_expr = Expr::Binary(BinaryExpr {
             operator: Token::new(TokenType::Less, "<", None, 0),
             left: make_literal_num_expr(10.0),
@@ -294,7 +328,7 @@ mod tests {
 
     #[test]
     fn test_binary_less_than_equal() {
-        let interpreter = Interpreter {};
+        let interpreter = Interpreter::new();
         let binary_expr = Expr::Binary(BinaryExpr {
             operator: Token::new(TokenType::LessEqual, "<=", None, 0),
             left: make_literal_num_expr(10.0),
@@ -307,7 +341,7 @@ mod tests {
 
     #[test]
     fn test_binary_greater_than_equal() {
-        let interpreter = Interpreter {};
+        let interpreter = Interpreter::new();
         let binary_expr = Expr::Binary(BinaryExpr {
             operator: Token::new(TokenType::GreaterEqual, ">=", None, 0),
             left: make_literal_num_expr(10.0),
@@ -320,7 +354,7 @@ mod tests {
 
     #[test]
     fn test_err_binary_greater_than() {
-        let interpreter = Interpreter {};
+        let interpreter = Interpreter::new();
         let binary_expr = Expr::Binary(BinaryExpr {
             operator: Token::new(TokenType::GreaterEqual, ">=", None, 0),
             left: make_literal_str_expr("10.0"),
@@ -331,7 +365,7 @@ mod tests {
     }
     #[test]
     fn test_err_binary_greater_than_equal() {
-        let interpreter = Interpreter {};
+        let interpreter = Interpreter::new();
         let binary_expr = Expr::Binary(BinaryExpr {
             operator: Token::new(TokenType::GreaterEqual, ">=", None, 0),
             left: make_literal_str_expr("10.0"),
@@ -342,7 +376,7 @@ mod tests {
     }
     #[test]
     fn test_binary_equal() {
-        let interpreter = Interpreter {};
+        let interpreter = Interpreter::new();
         let binary_expr = Expr::Binary(BinaryExpr {
             operator: Token::new(TokenType::EqualEqual, "==", None, 0),
             left: make_literal_nil_expr(),

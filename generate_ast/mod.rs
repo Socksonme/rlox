@@ -16,10 +16,12 @@ pub fn generate_ast(output_dir: &str) -> io::Result<()> {
         "Expr",
         &["use crate::error::*;", "use crate::token::*;", "use crate::lit::*;"],
         &[
+            "Assign   : Token name, Box<Expr> value",
             "Binary   : Box<Expr> left, Token operator, Box<Expr> right",
             "Grouping : Box<Expr> expression",
             "Literal  : Option<Lit> value",
             "Unary    : Token operator, Box<Expr> right",
+            "Variable : Token name"
         ],
     )?;
     define_ast(
@@ -27,13 +29,14 @@ pub fn generate_ast(output_dir: &str) -> io::Result<()> {
         "Stmt",
         &[
             "use crate::error::*;",
-            // "use crate::token::*;",
+            "use crate::token::*;",
             // "use crate::lit::*;",
             "use crate::expr::*;",
         ],
         &[
             "Expression   : Expr expression",
             "Print        : Expr expression",
+            "Var          : Token name, Option<Expr> initializer",
         ],
     )
 }
@@ -113,8 +116,9 @@ fn define_ast(
     for t in &tree_types {
         writeln!(
             file,
-            "    fn visit_{}_{}(&self, expr: &{}) -> Result<T, LoxError>;",
+            "    fn visit_{}_{}(&self, {}: &{}) -> Result<T, LoxError>;",
             t.base_class_name.to_lowercase(),
+            base_name.to_lowercase(),
             base_name.to_lowercase(),
             t.class_name
         )?;

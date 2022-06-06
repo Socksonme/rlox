@@ -8,6 +8,7 @@ pub mod scanner;
 pub mod stmt;
 pub mod token;
 pub mod token_type;
+pub mod environment;
 
 use std::{
     env::args,
@@ -23,7 +24,7 @@ use scanner::*;
 
 fn main() {
     let args = args().collect::<Vec<String>>();
-    let lox = Lox::new(Interpreter {});
+    let lox = Lox::new(Interpreter::new());
     match args.len() {
         1 => {
             lox.run_prompt().unwrap();
@@ -85,9 +86,10 @@ impl Lox {
         let mut scanner = Scanner::new(source);
         let tokens = scanner.scan_tokens()?;
         let mut parser = Parser::new(tokens);
+
         let statements = parser.parse()?;
 
-        if self.interpreter.interpret(&statements) {
+        if parser.success() && self.interpreter.interpret(&statements) {
             Ok(())
         } else {
             Err(LoxError::error(0, ""))
