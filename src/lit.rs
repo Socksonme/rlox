@@ -1,11 +1,4 @@
-use std::{
-    cmp::{Ordering, PartialOrd},
-    fmt::Display,
-    ops::{Add, Div, Mul, Sub},
-};
-
-use crate::error::LoxError;
-
+use std::fmt::Display;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
     Num(f64),

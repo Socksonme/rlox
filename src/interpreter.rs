@@ -10,56 +10,67 @@ impl ExprVisitor<Lit> for Interpreter {
         let left = self.evaluate(&expr.left)?;
         let right = self.evaluate(&expr.right)?;
 
-        fn match_num(a: &Lit, b: &Lit) -> bool {
-            matches!((a, b), (Lit::Num(_), Lit::Num(_)))
-        }
-
-        match (left, right) {
-            (Lit::Num(left), Lit::Num(right)) => {
-                return match expr.operator.ttype {
-                    TokenType::Minus => Ok(Lit::Num(left - right)),
-                    TokenType::Slash => Ok(Lit::Num(left / right)),
-                    TokenType::Star => Ok(Lit::Num(left * right)),
-                    TokenType::Plus => Ok(Lit::Num(left + right)),
-                    TokenType::Greater => Ok(Lit::Bool(left > right)),
-                    TokenType::GreaterEqual => Ok(Lit::Bool(left >= right)),
-                    TokenType::Less => Ok(Lit::Bool(left < right)),
-                    TokenType::LessEqual => Ok(Lit::Bool(left <= right)),
-                    TokenType::EqualEqual => Ok(Lit::Bool(left == right)),
-                    TokenType::BangEqual => Ok(Lit::Bool(left != right)),
-                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Illegal expression."))
-                };
+        // This still doesnt work with EqualEqual, kek
+        match expr.operator.ttype {
+            TokenType::Plus => {
+                match (left, right) {
+                    (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Num(left + right)),
+                    (Lit::Str(left), Lit::Str(right)) => Ok(Lit::Str(format!("{}{}", left, right))),
+                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Expected two numbers or two strings."))
+                }
             }
-            (Lit::Str(left), Lit::Str(right)) => {
-                return match expr.operator.ttype {
-                    TokenType::Plus => Ok(Lit::Str(format!("{}{}", left, right))),
-                    TokenType::EqualEqual => Ok(Lit::Bool(left == right)),
-                    TokenType::BangEqual => Ok(Lit::Bool(left != right)),
-                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Illegal expression."))
-                };
+            TokenType::Minus => {
+                match (left, right) {
+                    (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Num(left - right)),
+                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Expected two numbers."))
+                }
             }
-            (Lit::Bool(left), Lit::Bool(right)) => {
-                return match expr.operator.ttype {
-                    TokenType::EqualEqual => Ok(Lit::Bool(left == right)),
-                    TokenType::BangEqual => Ok(Lit::Bool(left != right)),
-                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Illegal expression."))
-                };
+            TokenType::Star => {
+                match (left, right) {
+                    (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Num(left * right)),
+                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Expected two numbers."))
+                }
             }
-            (Lit::Nil, Lit::Nil) => {
-                return match expr.operator.ttype {
-                    TokenType::EqualEqual => Ok(Lit::Bool(true)),
-                    TokenType::BangEqual => Ok(Lit::Bool(false)),
-                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Illegal expression."))
-                };
+            TokenType::Slash => {
+                match (left, right) {
+                    (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Num(left / right)),
+                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Expected two numbers."))
+                }
             }
-            (Lit::Nil, _) => {
-                return match expr.operator.ttype {
-                    TokenType::EqualEqual => Ok(Lit::Bool(false)),
-                    TokenType::BangEqual => Ok(Lit::Bool(true)),
-                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Illegal expression."))
-                };
+            TokenType::Greater => {
+                match (left, right) {
+                    (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Bool(left > right)),
+                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Expected two numbers."))
+                }
             }
-            _ => Err(LoxError::runtime_error(expr.operator.clone(), "Illegal expression.")),
+            TokenType::GreaterEqual => {
+                match (left, right) {
+                    (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Bool(left >= right)),
+                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Expected two numbers."))
+                }
+            }
+            TokenType::Less => {
+                match (left, right) {
+                    (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Bool(left < right)),
+                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Expected two numbers."))
+                }
+            }
+            TokenType::LessEqual => {
+                match (left, right) {
+                    (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Bool(left <= right)),
+                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Expected two numbers."))
+                }
+            }
+            TokenType::EqualEqual => {
+                Ok(Lit::Bool(left == right))
+            }
+            TokenType::BangEqual => {
+                Ok(Lit::Bool(left != right))
+            }
+            _ => Err(LoxError::runtime_error(
+                expr.operator.clone(),
+                "Illegal expression.",
+            )),
         }
     }
     fn visit_unary_expr(&self, expr: &UnaryExpr) -> Result<Lit, LoxError> {
@@ -89,6 +100,19 @@ impl ExprVisitor<Lit> for Interpreter {
 impl Interpreter {
     pub fn evaluate(&self, expr: &Expr) -> Result<Lit, LoxError> {
         expr.accept(self)
+    }
+
+    pub fn interpret(&self, expr: &Expr) -> bool {
+        match self.evaluate(expr) {
+            Ok(v) => {
+                println!("{}", v);
+                true
+            }
+            Err(e) => {
+                e.report("");
+                false
+            }
+        }
     }
 }
 

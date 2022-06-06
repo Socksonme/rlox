@@ -38,14 +38,6 @@ impl LoxError {
         err
     }
 
-    pub fn to_runtime(&self, token: Token) -> Self {
-        Self {
-            line: token.line,
-            message: self.message.clone(),
-            token: Some(token),
-        }
-    }
-
     pub fn report(&self, loc: &str) {
         if let Some(token) = &self.token {
             if token.is(TokenType::Eof) {
