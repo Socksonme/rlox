@@ -1,5 +1,3 @@
-use core::panic;
-
 use crate::error::LoxError;
 use crate::expr::*;
 use crate::lit::*;
@@ -12,53 +10,57 @@ impl ExprVisitor<Lit> for Interpreter {
         let left = self.evaluate(&expr.left)?;
         let right = self.evaluate(&expr.right)?;
 
-        match expr.operator.ttype {
-            TokenType::Minus => {
-                match left - right {
-                    Ok(l) => return Ok(l),
-                    Err(e) => return Err(LoxError::runtime_error(expr.operator.clone(), &e.message)),
-                }
-            }
-            TokenType::Slash => {
-                match left / right {
-                    Ok(l) => return Ok(l),
-                    Err(e) => return Err(LoxError::runtime_error(expr.operator.clone(), &e.message)),
-                }
-            }
-            TokenType::Star => {
-                match left * right {
-                    Ok(l) => return Ok(l),
-                    Err(e) => return Err(LoxError::runtime_error(expr.operator.clone(), &e.message)),
-                }
-            }
-            TokenType::Plus => {
-                match left + right {
-                    Ok(l) => return Ok(l),
-                    Err(e) => return Err(LoxError::runtime_error(expr.operator.clone(), &e.message)),
-                }
-            }
-            TokenType::Greater => {
-                return Ok(Lit::Bool(left > right));
-            }
-            TokenType::GreaterEqual => {
-                return Ok(Lit::Bool(left >= right));
-            }
-            TokenType::Less => {
-                return Ok(Lit::Bool(left < right));
-            }
-            TokenType::LessEqual => {
-                return Ok(Lit::Bool(left <= right));
-            }
-            TokenType::EqualEqual => {
-                return Ok(Lit::Bool(left == right));
-            }
-            TokenType::BangEqual => {
-                return Ok(Lit::Bool(left != right));
-            }
-            _ => unimplemented!(),
+        fn match_num(a: &Lit, b: &Lit) -> bool {
+            matches!((a, b), (Lit::Num(_), Lit::Num(_)))
         }
 
-        Ok(Lit::Nil)
+        match (left, right) {
+            (Lit::Num(left), Lit::Num(right)) => {
+                return match expr.operator.ttype {
+                    TokenType::Minus => Ok(Lit::Num(left - right)),
+                    TokenType::Slash => Ok(Lit::Num(left / right)),
+                    TokenType::Star => Ok(Lit::Num(left * right)),
+                    TokenType::Plus => Ok(Lit::Num(left + right)),
+                    TokenType::Greater => Ok(Lit::Bool(left > right)),
+                    TokenType::GreaterEqual => Ok(Lit::Bool(left >= right)),
+                    TokenType::Less => Ok(Lit::Bool(left < right)),
+                    TokenType::LessEqual => Ok(Lit::Bool(left <= right)),
+                    TokenType::EqualEqual => Ok(Lit::Bool(left == right)),
+                    TokenType::BangEqual => Ok(Lit::Bool(left != right)),
+                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Illegal expression."))
+                };
+            }
+            (Lit::Str(left), Lit::Str(right)) => {
+                return match expr.operator.ttype {
+                    TokenType::Plus => Ok(Lit::Str(format!("{}{}", left, right))),
+                    TokenType::EqualEqual => Ok(Lit::Bool(left == right)),
+                    TokenType::BangEqual => Ok(Lit::Bool(left != right)),
+                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Illegal expression."))
+                };
+            }
+            (Lit::Bool(left), Lit::Bool(right)) => {
+                return match expr.operator.ttype {
+                    TokenType::EqualEqual => Ok(Lit::Bool(left == right)),
+                    TokenType::BangEqual => Ok(Lit::Bool(left != right)),
+                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Illegal expression."))
+                };
+            }
+            (Lit::Nil, Lit::Nil) => {
+                return match expr.operator.ttype {
+                    TokenType::EqualEqual => Ok(Lit::Bool(true)),
+                    TokenType::BangEqual => Ok(Lit::Bool(false)),
+                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Illegal expression."))
+                };
+            }
+            (Lit::Nil, _) => {
+                return match expr.operator.ttype {
+                    TokenType::EqualEqual => Ok(Lit::Bool(false)),
+                    TokenType::BangEqual => Ok(Lit::Bool(true)),
+                    _ => Err(LoxError::runtime_error(expr.operator.clone(), "Illegal expression."))
+                };
+            }
+            _ => Err(LoxError::runtime_error(expr.operator.clone(), "Illegal expression.")),
+        }
     }
     fn visit_unary_expr(&self, expr: &UnaryExpr) -> Result<Lit, LoxError> {
         let right = self.evaluate(&expr.right)?;
@@ -274,7 +276,7 @@ mod tests {
     }
 
     #[test]
-    fn test_binary_greater_than_not_equal() {
+    fn test_err_binary_greater_than() {
         let interpreter = Interpreter {};
         let binary_expr = Expr::Binary(BinaryExpr {
             operator: Token::new(TokenType::GreaterEqual, ">=", None, 0),
@@ -282,11 +284,10 @@ mod tests {
             right: make_literal_num_expr(10.0),
         });
         let result = interpreter.evaluate(&binary_expr);
-        assert!(result.is_ok());
-        assert_eq!(result.ok(), Some(Lit::Bool(false)));
+        assert!(result.is_err());
     }
     #[test]
-    fn test_binary_not_equal() {
+    fn test_err_binary_greater_than_equal() {
         let interpreter = Interpreter {};
         let binary_expr = Expr::Binary(BinaryExpr {
             operator: Token::new(TokenType::GreaterEqual, ">=", None, 0),
@@ -294,8 +295,7 @@ mod tests {
             right: make_literal_nil_expr(),
         });
         let result = interpreter.evaluate(&binary_expr);
-        assert!(result.is_ok());
-        assert_eq!(result.ok(), Some(Lit::Bool(false)));
+        assert!(result.is_err());
     }
     #[test]
     fn test_binary_equal() {
