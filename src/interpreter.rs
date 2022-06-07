@@ -1,14 +1,15 @@
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use crate::environment::Environment;
 use crate::error::LoxError;
 use crate::expr::*;
 use crate::lit::*;
-use crate::token_type::TokenType;
 use crate::stmt::*;
+use crate::token_type::TokenType;
 
 pub struct Interpreter {
-    environment: RefCell<Environment>,
+    environment: RefCell<Rc<RefCell<Environment>>>,
 }
 
 impl Default for Interpreter {
@@ -18,6 +19,14 @@ impl Default for Interpreter {
 }
 
 impl StmtVisitor<()> for Interpreter {
+    fn visit_block_stmt(&self, stmt: &BlockStmt) -> Result<(), LoxError> {
+        // Otheriwse you borrow non-mutably then mutably
+        let env = Environment::new_with_enclosing(self.environment.borrow().clone());
+        self.execute_block(
+            &stmt.statements,
+            env,
+        )
+    }
     fn visit_expression_stmt(&self, stmt: &ExpressionStmt) -> Result<(), LoxError> {
         self.evaluate(&stmt.expression)?;
         Ok(())
@@ -34,7 +43,10 @@ impl StmtVisitor<()> for Interpreter {
             None
         };
 
-        self.environment.borrow_mut().define(&stmt.name.lexeme, value.unwrap_or(Lit::Nil));
+        self.environment
+            .borrow()
+            .borrow_mut()
+            .define(&stmt.name.lexeme, value.unwrap_or(Lit::Nil));
         Ok(())
     }
 }
@@ -134,11 +146,14 @@ impl ExprVisitor<Lit> for Interpreter {
         Ok(expr.value.clone().unwrap())
     }
     fn visit_variable_expr(&self, expr: &VariableExpr) -> Result<Lit, LoxError> {
-        self.environment.borrow().get(&expr.name)
+        self.environment.borrow().borrow().get(&expr.name)
     }
     fn visit_assign_expr(&self, expr: &AssignExpr) -> Result<Lit, LoxError> {
         let value = self.evaluate(&expr.value)?;
-        self.environment.borrow_mut().assign(&expr.name, value.clone())?;
+        self.environment
+            .borrow()
+            .borrow_mut()
+            .assign(&expr.name, value.clone())?;
         Ok(value)
     }
 }
@@ -146,7 +161,7 @@ impl ExprVisitor<Lit> for Interpreter {
 impl Interpreter {
     pub fn new() -> Self {
         Self {
-            environment: RefCell::new(Environment::new())
+            environment: RefCell::new(Rc::new(RefCell::new(Environment::new()))),
         }
     }
 
@@ -156,6 +171,15 @@ impl Interpreter {
 
     pub fn execute(&self, statement: &Stmt) -> Result<(), LoxError> {
         statement.accept(self)
+    }
+
+    fn execute_block(&self, statements: &[Stmt], environment: Environment) -> Result<(), LoxError> {
+        // Because we have to actually change the pointer itself, not the value that it's pointing to
+        let previous = self.environment.replace(Rc::new(RefCell::new(environment)));
+
+        let result = statements.iter().try_for_each(|s| self.execute(s));
+        self.environment.replace(previous);
+        result
     }
 
     /// Returns `true` on success

@@ -1,4 +1,4 @@
-use crate::{error::*, expr::*, lit::*, token::*, token_type::*, stmt::*};
+use crate::{error::*, expr::*, lit::*, stmt::*, token::*, token_type::*};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -8,7 +8,11 @@ pub struct Parser {
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        Self { tokens, current: 0, had_error: false }
+        Self {
+            tokens,
+            current: 0,
+            had_error: false,
+        }
     }
 
     pub fn parse(&mut self) -> Result<Vec<Stmt>, LoxError> {
@@ -24,19 +28,33 @@ impl Parser {
         if self.matches(&[TokenType::Print]) {
             return self.print_statement();
         }
+        if self.matches(&[TokenType::LeftBrace]) {
+            return Ok(Stmt::Block(BlockStmt {
+                statements: self.block()?,
+            }));
+        }
         self.expression_statement()
     }
 
     fn print_statement(&mut self) -> Result<Stmt, LoxError> {
         let value = self.expression()?;
         self.consume(TokenType::Semicolon, "Expected ';' after value;")?;
-        Ok(Stmt::Print(PrintStmt {expression: value}))
+        Ok(Stmt::Print(PrintStmt { expression: value }))
     }
 
     fn expression_statement(&mut self) -> Result<Stmt, LoxError> {
         let value = self.expression()?;
         self.consume(TokenType::Semicolon, "Expected ';' after value;")?;
-        Ok(Stmt::Expression(ExpressionStmt {expression: value}))
+        Ok(Stmt::Expression(ExpressionStmt { expression: value }))
+    }
+
+    fn block(&mut self) -> Result<Vec<Stmt>, LoxError> {
+        let mut statements = Vec::new();
+        while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
+            statements.push(self.declaration()?);
+        }
+        self.consume(TokenType::RightBrace, "Expect '}' after block.")?;
+        Ok(statements)
     }
 
     fn expression(&mut self) -> Result<Expr, LoxError> {
@@ -66,8 +84,11 @@ impl Parser {
             None
         };
 
-        self.consume(TokenType::Semicolon, "Expected ';' after variable declaration.")?;
-        Ok(Stmt::Var(VarStmt {name, initializer}))
+        self.consume(
+            TokenType::Semicolon,
+            "Expected ';' after variable declaration.",
+        )?;
+        Ok(Stmt::Var(VarStmt { name, initializer }))
     }
 
     fn assignment(&mut self) -> Result<Expr, LoxError> {
@@ -79,7 +100,10 @@ impl Parser {
 
             // Check if expr is a valid l-value (VariableExpr, aka identifier)
             if let Expr::Variable(v) = expr {
-                return Ok(Expr::Assign(AssignExpr {name: v.name, value: Box::new(value)}));
+                return Ok(Expr::Assign(AssignExpr {
+                    name: v.name,
+                    value: Box::new(value),
+                }));
             }
             self.error(equals, "Invalid assignment target.");
         }

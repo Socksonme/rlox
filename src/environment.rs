@@ -1,6 +1,11 @@
-use std::{collections::{HashMap, hash_map::Entry}, rc::Rc, cell::RefCell};
-use crate::{lit::Lit, error::LoxError, token::Token};
+use crate::{error::LoxError, lit::Lit, token::Token};
+use std::{
+    cell::RefCell,
+    collections::{hash_map::Entry, HashMap},
+    rc::Rc,
+};
 
+#[derive(Debug)]
 pub struct Environment {
     values: HashMap<String, Lit>,
     enclosing: Option<Rc<RefCell<Environment>>>,
@@ -38,7 +43,10 @@ impl Environment {
             return enclosing.borrow().get(name);
         }
 
-        Err(LoxError::runtime_error(name.clone(), &format!("Undefined variable '{}'.", name.lexeme)))
+        Err(LoxError::runtime_error(
+            name.clone(),
+            &format!("Undefined variable '{}'.", name.lexeme),
+        ))
     }
 
     pub fn assign(&mut self, name: &Token, value: Lit) -> Result<(), LoxError> {
@@ -46,7 +54,10 @@ impl Environment {
             ent.insert(value);
             Ok(())
         } else {
-            Err(LoxError::runtime_error(name.clone(), &format!("Undefined variable {}.", name.lexeme)))
+            Err(LoxError::runtime_error(
+                name.clone(),
+                &format!("Undefined variable {}.", name.lexeme),
+            ))
         }
     }
 }

@@ -14,14 +14,18 @@ pub fn generate_ast(output_dir: &str) -> io::Result<()> {
     define_ast(
         output_dir,
         "Expr",
-        &["use crate::error::*;", "use crate::token::*;", "use crate::lit::*;"],
+        &[
+            "use crate::error::*;",
+            "use crate::token::*;",
+            "use crate::lit::*;",
+        ],
         &[
             "Assign   : Token name, Box<Expr> value",
             "Binary   : Box<Expr> left, Token operator, Box<Expr> right",
             "Grouping : Box<Expr> expression",
             "Literal  : Option<Lit> value",
             "Unary    : Token operator, Box<Expr> right",
-            "Variable : Token name"
+            "Variable : Token name",
         ],
     )?;
     define_ast(
@@ -34,6 +38,7 @@ pub fn generate_ast(output_dir: &str) -> io::Result<()> {
             "use crate::expr::*;",
         ],
         &[
+            "Block        : Vec<Stmt> statements",
             "Expression   : Expr expression",
             "Print        : Expr expression",
             "Var          : Token name, Option<Expr> initializer",
