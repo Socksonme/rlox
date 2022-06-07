@@ -19,6 +19,15 @@ impl Default for Interpreter {
 }
 
 impl StmtVisitor<()> for Interpreter {
+    fn visit_if_stmt(&self, stmt: &IfStmt) -> Result<(), LoxError> {
+        if self.evaluate(&stmt.condition)?.into() {
+            self.execute(&stmt.then_branch)?;
+        } else if let Some(else_branch) = &stmt.else_branch {
+            self.execute(else_branch)?;
+        }
+        Ok(())
+    }
+
     fn visit_block_stmt(&self, stmt: &BlockStmt) -> Result<(), LoxError> {
         // Otheriwse you borrow non-mutably then mutably
         let env = Environment::new_with_enclosing(self.environment.borrow().clone());

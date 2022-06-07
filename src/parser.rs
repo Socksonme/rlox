@@ -33,7 +33,24 @@ impl Parser {
                 statements: self.block()?,
             }));
         }
+        if self.matches(&[TokenType::If]) {
+            return self.if_statement();
+        }
         self.expression_statement()
+    }
+
+    fn if_statement(&mut self) -> Result<Stmt, LoxError>{
+        self.consume(TokenType::LeftParen, "Expected '(' after if.")?;
+        let condition = self.expression()?;
+        self.consume(TokenType::RightParen, "Expected ')' after if condition.")?;
+
+        let then_branch = Box::new(self.statement()?);
+        let else_branch = if self.matches(&[TokenType::Else]) {
+            Some(Box::new(self.statement()?))
+        } else {
+            None
+        };
+        Ok(Stmt::If(IfStmt{condition, then_branch, else_branch}))
     }
 
     fn print_statement(&mut self) -> Result<Stmt, LoxError> {
