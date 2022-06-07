@@ -1,8 +1,9 @@
-use std::{collections::{HashMap, hash_map::Entry}};
+use std::{collections::{HashMap, hash_map::Entry}, rc::Rc, cell::RefCell};
 use crate::{lit::Lit, error::LoxError, token::Token};
 
 pub struct Environment {
     values: HashMap<String, Lit>,
+    enclosing: Option<Rc<RefCell<Environment>>>,
 }
 
 impl Default for Environment {
@@ -15,6 +16,14 @@ impl Environment {
     pub fn new() -> Self {
         Self {
             values: HashMap::new(),
+            enclosing: None,
+        }
+    }
+
+    pub fn new_with_enclosing(enclosing: Rc<RefCell<Environment>>) -> Self {
+        Self {
+            values: HashMap::new(),
+            enclosing: Some(enclosing),
         }
     }
 
@@ -23,10 +32,13 @@ impl Environment {
     }
 
     pub fn get(&self, name: &Token) -> Result<Lit, LoxError> {
-        match self.values.get(&name.lexeme) {
-            Some(lit) => Ok(lit.clone()),
-            _ => Err(LoxError::runtime_error(name.clone(), &format!("Undefined variable '{}'.", name.lexeme)))
+        if let Some(lit) = self.values.get(&name.lexeme) {
+            return Ok(lit.clone());
+        } else if let Some(enclosing) = &self.enclosing {
+            return enclosing.borrow().get(name);
         }
+
+        Err(LoxError::runtime_error(name.clone(), &format!("Undefined variable '{}'.", name.lexeme)))
     }
 
     pub fn assign(&mut self, name: &Token, value: Lit) -> Result<(), LoxError> {

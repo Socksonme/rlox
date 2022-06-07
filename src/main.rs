@@ -89,10 +89,9 @@ impl Lox {
 
         let statements = parser.parse()?;
 
-        if parser.success() && self.interpreter.interpret(&statements) {
-            Ok(())
-        } else {
-            Err(LoxError::error(0, ""))
+        if parser.success() {
+            self.interpreter.interpret(&statements);
         }
+        Ok(())
     }
 }
