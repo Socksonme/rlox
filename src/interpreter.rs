@@ -20,7 +20,7 @@ impl Default for Interpreter {
 
 impl StmtVisitor<()> for Interpreter {
     fn visit_if_stmt(&self, stmt: &IfStmt) -> Result<(), LoxError> {
-        if self.evaluate(&stmt.condition)?.into() {
+        if self.evaluate(&stmt.condition)?.is_truthy() {
             self.execute(&stmt.then_branch)?;
         } else if let Some(else_branch) = &stmt.else_branch {
             self.execute(else_branch)?;
@@ -31,10 +31,7 @@ impl StmtVisitor<()> for Interpreter {
     fn visit_block_stmt(&self, stmt: &BlockStmt) -> Result<(), LoxError> {
         // Otheriwse you borrow non-mutably then mutably
         let env = Environment::new_with_enclosing(self.environment.borrow().clone());
-        self.execute_block(
-            &stmt.statements,
-            env,
-        )
+        self.execute_block(&stmt.statements, env)
     }
     fn visit_expression_stmt(&self, stmt: &ExpressionStmt) -> Result<(), LoxError> {
         self.evaluate(&stmt.expression)?;
@@ -61,6 +58,20 @@ impl StmtVisitor<()> for Interpreter {
 }
 
 impl ExprVisitor<Lit> for Interpreter {
+    fn visit_logical_expr(&self, expr: &LogicalExpr) -> Result<Lit, LoxError> {
+        let left = self.evaluate(&expr.left)?;
+
+        if expr.operator.ttype == TokenType::Or {
+            if left.is_truthy() {
+                return Ok(left);
+            }
+        } else if left.is_truthy() {
+            return Ok(left);
+        }
+
+        self.evaluate(&expr.right)
+    }
+
     fn visit_binary_expr(&self, expr: &BinaryExpr) -> Result<Lit, LoxError> {
         let left = self.evaluate(&expr.left)?;
         let right = self.evaluate(&expr.right)?;
@@ -141,7 +152,7 @@ impl ExprVisitor<Lit> for Interpreter {
                 _ => return Ok(Lit::Nil),
             },
             TokenType::Bang => {
-                let val: bool = right.into();
+                let val: bool = right.is_truthy();
                 return Ok(Lit::Bool(!val));
             }
             _ => {}

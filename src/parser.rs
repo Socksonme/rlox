@@ -39,7 +39,7 @@ impl Parser {
         self.expression_statement()
     }
 
-    fn if_statement(&mut self) -> Result<Stmt, LoxError>{
+    fn if_statement(&mut self) -> Result<Stmt, LoxError> {
         self.consume(TokenType::LeftParen, "Expected '(' after if.")?;
         let condition = self.expression()?;
         self.consume(TokenType::RightParen, "Expected ')' after if condition.")?;
@@ -50,7 +50,11 @@ impl Parser {
         } else {
             None
         };
-        Ok(Stmt::If(IfStmt{condition, then_branch, else_branch}))
+        Ok(Stmt::If(IfStmt {
+            condition,
+            then_branch,
+            else_branch,
+        }))
     }
 
     fn print_statement(&mut self) -> Result<Stmt, LoxError> {
@@ -109,8 +113,9 @@ impl Parser {
     }
 
     fn assignment(&mut self) -> Result<Expr, LoxError> {
-        let expr = self.equality()?;
+        let expr = self.or()?;
 
+        // Because assignment is right-associative
         if self.matches(&[TokenType::Equal]) {
             let equals = self.previous();
             let value = self.expression()?;
@@ -123,6 +128,36 @@ impl Parser {
                 }));
             }
             self.error(equals, "Invalid assignment target.");
+        }
+        Ok(expr)
+    }
+
+    fn or(&mut self) -> Result<Expr, LoxError> {
+        let mut expr = self.and()?;
+
+        while self.matches(&[TokenType::Or]) {
+            let operator = self.previous();
+            let right = Box::new(self.equality()?);
+            expr = Expr::Logical(LogicalExpr {
+                left: Box::new(expr),
+                operator,
+                right,
+            });
+        }
+        Ok(expr)
+    }
+
+    fn and(&mut self) -> Result<Expr, LoxError> {
+        let mut expr = self.equality()?;
+
+        while self.matches(&[TokenType::And]) {
+            let operator = self.previous();
+            let right = Box::new(self.equality()?);
+            expr = Expr::Logical(LogicalExpr {
+                left: Box::new(expr),
+                operator,
+                right,
+            });
         }
         Ok(expr)
     }

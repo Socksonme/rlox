@@ -30,9 +30,15 @@ impl Display for Lit {
     }
 }
 
+impl Lit {
+    pub fn is_truthy(&self) -> bool {
+        !matches!(self, Lit::Bool(false) | Lit::Nil)
+    }
+}
+
 impl From<Lit> for bool {
     /// Returns true on everything except `Lit::Bool(false)` and [`Lit::Nil`]
     fn from(lit: Lit) -> bool {
-        !matches!(lit, Lit::Bool(false) | Lit::Nil)
+        lit.is_truthy()
     }
 }
