@@ -36,7 +36,19 @@ impl Parser {
         if self.matches(&[TokenType::If]) {
             return self.if_statement();
         }
+        if self.matches(&[TokenType::While]) {
+            return self.while_statement();
+        }
         self.expression_statement()
+    }
+
+    fn while_statement(&mut self) -> Result<Stmt, LoxError> {
+        self.consume(TokenType::LeftParen, "Expect '(' after 'while'.")?;
+        let condition = self.expression()?;
+        self.consume(TokenType::RightParen, "Expect ')' after condition.")?;
+        let body = self.statement()?;
+
+        Ok(Stmt::While(WhileStmt{condition, body: Box::new(body)}))
     }
 
     fn if_statement(&mut self) -> Result<Stmt, LoxError> {
@@ -137,7 +149,7 @@ impl Parser {
 
         while self.matches(&[TokenType::Or]) {
             let operator = self.previous();
-            let right = Box::new(self.equality()?);
+            let right = Box::new(self.and()?);
             expr = Expr::Logical(LogicalExpr {
                 left: Box::new(expr),
                 operator,

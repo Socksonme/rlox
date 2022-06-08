@@ -24,7 +24,7 @@ use scanner::*;
 
 fn main() {
     let args = args().collect::<Vec<String>>();
-    let lox = Lox::new(Interpreter::new());
+    let mut lox = Lox::new(Interpreter::new());
     match args.len() {
         1 => {
             lox.run_prompt().unwrap();
@@ -48,7 +48,7 @@ impl Lox {
         Self { interpreter }
     }
 
-    pub fn run_file(&self, path: &str) -> io::Result<()> {
+    pub fn run_file(&mut self, path: &str) -> io::Result<()> {
         let mut inp = String::new();
         File::open(path)?.read_to_string(&mut inp).unwrap();
         if self.run(inp).is_err() {
@@ -58,7 +58,7 @@ impl Lox {
         Ok(())
     }
 
-    pub fn run_prompt(&self) -> io::Result<()> {
+    pub fn run_prompt(&mut self) -> io::Result<()> {
         let stdin = std::io::stdin();
         let handle = stdin.lock();
 
@@ -82,7 +82,7 @@ impl Lox {
         Ok(())
     }
 
-    pub fn run(&self, source: String) -> Result<(), LoxError> {
+    pub fn run(&mut self, source: String) -> Result<(), LoxError> {
         let mut scanner = Scanner::new(source);
         let tokens = scanner.scan_tokens()?;
         let mut parser = Parser::new(tokens);
