@@ -82,7 +82,7 @@ impl Lox {
         Ok(())
     }
 
-    pub fn run(&mut self, source: String) -> Result<(), LoxError> {
+    pub fn run(&mut self, source: String) -> Result<(), LoxResult> {
         let mut scanner = Scanner::new(source);
         let tokens = scanner.scan_tokens()?;
         let mut parser = Parser::new(tokens);

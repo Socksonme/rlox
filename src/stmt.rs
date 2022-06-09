@@ -12,7 +12,7 @@ pub enum Stmt {
 }
 
 impl Stmt {
-    pub fn accept<T>(&self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, LoxError> {
+    pub fn accept<T>(&self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, LoxResult> {
         match self {
             Stmt::Block(stmt) => {
                 stmt.accept(visitor)
@@ -65,46 +65,46 @@ pub struct WhileStmt {
 }
 
 pub trait StmtVisitor<T> {
-    fn visit_block_stmt(&mut self, stmt: &BlockStmt) -> Result<T, LoxError>;
-    fn visit_expression_stmt(&mut self, stmt: &ExpressionStmt) -> Result<T, LoxError>;
-    fn visit_if_stmt(&mut self, stmt: &IfStmt) -> Result<T, LoxError>;
-    fn visit_print_stmt(&mut self, stmt: &PrintStmt) -> Result<T, LoxError>;
-    fn visit_var_stmt(&mut self, stmt: &VarStmt) -> Result<T, LoxError>;
-    fn visit_while_stmt(&mut self, stmt: &WhileStmt) -> Result<T, LoxError>;
+    fn visit_block_stmt(&mut self, stmt: &BlockStmt) -> Result<T, LoxResult>;
+    fn visit_expression_stmt(&mut self, stmt: &ExpressionStmt) -> Result<T, LoxResult>;
+    fn visit_if_stmt(&mut self, stmt: &IfStmt) -> Result<T, LoxResult>;
+    fn visit_print_stmt(&mut self, stmt: &PrintStmt) -> Result<T, LoxResult>;
+    fn visit_var_stmt(&mut self, stmt: &VarStmt) -> Result<T, LoxResult>;
+    fn visit_while_stmt(&mut self, stmt: &WhileStmt) -> Result<T, LoxResult>;
 }
 
 impl BlockStmt {
-    pub fn accept<T>(&self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, LoxError> {
+    pub fn accept<T>(&self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, LoxResult> {
         visitor.visit_block_stmt(self)
     }
 }
 
 impl ExpressionStmt {
-    pub fn accept<T>(&self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, LoxError> {
+    pub fn accept<T>(&self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, LoxResult> {
         visitor.visit_expression_stmt(self)
     }
 }
 
 impl IfStmt {
-    pub fn accept<T>(&self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, LoxError> {
+    pub fn accept<T>(&self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, LoxResult> {
         visitor.visit_if_stmt(self)
     }
 }
 
 impl PrintStmt {
-    pub fn accept<T>(&self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, LoxError> {
+    pub fn accept<T>(&self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, LoxResult> {
         visitor.visit_print_stmt(self)
     }
 }
 
 impl VarStmt {
-    pub fn accept<T>(&self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, LoxError> {
+    pub fn accept<T>(&self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, LoxResult> {
         visitor.visit_var_stmt(self)
     }
 }
 
 impl WhileStmt {
-    pub fn accept<T>(&self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, LoxError> {
+    pub fn accept<T>(&self, visitor: &mut dyn StmtVisitor<T>) -> Result<T, LoxResult> {
         visitor.visit_while_stmt(self)
     }
 }

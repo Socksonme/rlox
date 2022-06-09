@@ -89,7 +89,7 @@ fn define_ast(
     writeln!(file, "impl {base_name} {{")?;
     writeln!(
         file,
-        "    pub fn accept<T>(&self, visitor: &mut dyn {}Visitor<T>) -> Result<T, LoxError> {{",
+        "    pub fn accept<T>(&self, visitor: &mut dyn {}Visitor<T>) -> Result<T, LoxResult> {{",
         base_name
     )?;
     writeln!(file, "        match self {{")?;
@@ -124,7 +124,7 @@ fn define_ast(
     for t in &tree_types {
         writeln!(
             file,
-            "    fn visit_{}_{}(&mut self, {}: &{}) -> Result<T, LoxError>;",
+            "    fn visit_{}_{}(&mut self, {}: &{}) -> Result<T, LoxResult>;",
             t.base_class_name.to_lowercase(),
             base_name.to_lowercase(),
             base_name.to_lowercase(),
@@ -137,7 +137,7 @@ fn define_ast(
         writeln!(file, "impl {} {{", t.class_name)?;
         writeln!(
             file,
-            "    pub fn accept<T>(&self, visitor: &mut dyn {}Visitor<T>) -> Result<T, LoxError> {{",
+            "    pub fn accept<T>(&self, visitor: &mut dyn {}Visitor<T>) -> Result<T, LoxResult> {{",
             base_name
         )?;
         writeln!(

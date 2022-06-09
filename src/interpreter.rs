@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::environment::Environment;
-use crate::error::LoxError;
+use crate::error::LoxResult;
 use crate::expr::*;
 use crate::lit::*;
 use crate::stmt::*;
@@ -19,14 +19,14 @@ impl Default for Interpreter {
 }
 
 impl StmtVisitor<()> for Interpreter {
-    fn visit_while_stmt(&mut self, stmt: &WhileStmt) -> Result<(), LoxError> {
+    fn visit_while_stmt(&mut self, stmt: &WhileStmt) -> Result<(), LoxResult> {
         while self.evaluate(&stmt.condition)?.is_truthy() {
             self.execute(&stmt.body)?;
         }
         Ok(())
     }
 
-    fn visit_if_stmt(&mut self, stmt: &IfStmt) -> Result<(), LoxError> {
+    fn visit_if_stmt(&mut self, stmt: &IfStmt) -> Result<(), LoxResult> {
         if self.evaluate(&stmt.condition)?.is_truthy() {
             self.execute(&stmt.then_branch)?;
         } else if let Some(else_branch) = &stmt.else_branch {
@@ -35,21 +35,21 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
-    fn visit_block_stmt(&mut self, stmt: &BlockStmt) -> Result<(), LoxError> {
+    fn visit_block_stmt(&mut self, stmt: &BlockStmt) -> Result<(), LoxResult> {
         // Otheriwse you borrow non-mutably then mutably
         let env = Environment::new_with_enclosing(self.environment.clone());
         self.execute_block(&stmt.statements, env)
     }
-    fn visit_expression_stmt(&mut self, stmt: &ExpressionStmt) -> Result<(), LoxError> {
+    fn visit_expression_stmt(&mut self, stmt: &ExpressionStmt) -> Result<(), LoxResult> {
         self.evaluate(&stmt.expression)?;
         Ok(())
     }
-    fn visit_print_stmt(&mut self, stmt: &PrintStmt) -> Result<(), LoxError> {
+    fn visit_print_stmt(&mut self, stmt: &PrintStmt) -> Result<(), LoxResult> {
         let value = self.evaluate(&stmt.expression)?;
         println!("{}", value);
         Ok(())
     }
-    fn visit_var_stmt(&mut self, stmt: &VarStmt) -> Result<(), LoxError> {
+    fn visit_var_stmt(&mut self, stmt: &VarStmt) -> Result<(), LoxResult> {
         let value = if let Some(init) = &stmt.initializer {
             Some(self.evaluate(init)?)
         } else {
@@ -64,7 +64,7 @@ impl StmtVisitor<()> for Interpreter {
 }
 
 impl ExprVisitor<Lit> for Interpreter {
-    fn visit_logical_expr(&mut self, expr: &LogicalExpr) -> Result<Lit, LoxError> {
+    fn visit_logical_expr(&mut self, expr: &LogicalExpr) -> Result<Lit, LoxResult> {
         let left = self.evaluate(&expr.left)?;
 
         if expr.operator.ttype == TokenType::Or {
@@ -78,7 +78,7 @@ impl ExprVisitor<Lit> for Interpreter {
         self.evaluate(&expr.right)
     }
 
-    fn visit_binary_expr(&mut self, expr: &BinaryExpr) -> Result<Lit, LoxError> {
+    fn visit_binary_expr(&mut self, expr: &BinaryExpr) -> Result<Lit, LoxResult> {
         let left = self.evaluate(&expr.left)?;
         let right = self.evaluate(&expr.right)?;
 
@@ -87,69 +87,69 @@ impl ExprVisitor<Lit> for Interpreter {
             TokenType::Plus => match (left, right) {
                 (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Num(left + right)),
                 (Lit::Str(left), Lit::Str(right)) => Ok(Lit::Str(format!("{}{}", left, right))),
-                _ => Err(LoxError::runtime_error(
+                _ => Err(LoxResult::runtime_error(
                     expr.operator.clone(),
                     "Expected two numbers or two strings.",
                 )),
             },
             TokenType::Minus => match (left, right) {
                 (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Num(left - right)),
-                _ => Err(LoxError::runtime_error(
+                _ => Err(LoxResult::runtime_error(
                     expr.operator.clone(),
                     "Expected two numbers.",
                 )),
             },
             TokenType::Star => match (left, right) {
                 (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Num(left * right)),
-                _ => Err(LoxError::runtime_error(
+                _ => Err(LoxResult::runtime_error(
                     expr.operator.clone(),
                     "Expected two numbers.",
                 )),
             },
             TokenType::Slash => match (left, right) {
                 (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Num(left / right)),
-                _ => Err(LoxError::runtime_error(
+                _ => Err(LoxResult::runtime_error(
                     expr.operator.clone(),
                     "Expected two numbers.",
                 )),
             },
             TokenType::Greater => match (left, right) {
                 (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Bool(left > right)),
-                _ => Err(LoxError::runtime_error(
+                _ => Err(LoxResult::runtime_error(
                     expr.operator.clone(),
                     "Expected two numbers.",
                 )),
             },
             TokenType::GreaterEqual => match (left, right) {
                 (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Bool(left >= right)),
-                _ => Err(LoxError::runtime_error(
+                _ => Err(LoxResult::runtime_error(
                     expr.operator.clone(),
                     "Expected two numbers.",
                 )),
             },
             TokenType::Less => match (left, right) {
                 (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Bool(left < right)),
-                _ => Err(LoxError::runtime_error(
+                _ => Err(LoxResult::runtime_error(
                     expr.operator.clone(),
                     "Expected two numbers.",
                 )),
             },
             TokenType::LessEqual => match (left, right) {
                 (Lit::Num(left), Lit::Num(right)) => Ok(Lit::Bool(left <= right)),
-                _ => Err(LoxError::runtime_error(
+                _ => Err(LoxResult::runtime_error(
                     expr.operator.clone(),
                     "Expected two numbers.",
                 )),
             },
             TokenType::EqualEqual => Ok(Lit::Bool(left == right)),
             TokenType::BangEqual => Ok(Lit::Bool(left != right)),
-            _ => Err(LoxError::runtime_error(
+            _ => Err(LoxResult::runtime_error(
                 expr.operator.clone(),
                 "Illegal expression.",
             )),
         }
     }
-    fn visit_unary_expr(&mut self, expr: &UnaryExpr) -> Result<Lit, LoxError> {
+    fn visit_unary_expr(&mut self, expr: &UnaryExpr) -> Result<Lit, LoxResult> {
         let right = self.evaluate(&expr.right)?;
 
         match expr.operator.ttype {
@@ -163,18 +163,18 @@ impl ExprVisitor<Lit> for Interpreter {
             }
             _ => {}
         }
-        Err(LoxError::error(expr.operator.line, "Unreachable code."))
+        Err(LoxResult::error(expr.operator.line, "Unreachable code."))
     }
-    fn visit_grouping_expr(&mut self, expr: &GroupingExpr) -> Result<Lit, LoxError> {
+    fn visit_grouping_expr(&mut self, expr: &GroupingExpr) -> Result<Lit, LoxResult> {
         self.evaluate(&expr.expression)
     }
-    fn visit_literal_expr(&mut self, expr: &LiteralExpr) -> Result<Lit, LoxError> {
+    fn visit_literal_expr(&mut self, expr: &LiteralExpr) -> Result<Lit, LoxResult> {
         Ok(expr.value.clone().unwrap())
     }
-    fn visit_variable_expr(&mut self, expr: &VariableExpr) -> Result<Lit, LoxError> {
+    fn visit_variable_expr(&mut self, expr: &VariableExpr) -> Result<Lit, LoxResult> {
         self.environment.borrow().get(&expr.name)
     }
-    fn visit_assign_expr(&mut self, expr: &AssignExpr) -> Result<Lit, LoxError> {
+    fn visit_assign_expr(&mut self, expr: &AssignExpr) -> Result<Lit, LoxResult> {
         let value = self.evaluate(&expr.value)?;
         self.environment
             .borrow_mut()
@@ -190,11 +190,11 @@ impl Interpreter {
         }
     }
 
-    pub fn evaluate(&mut self, expr: &Expr) -> Result<Lit, LoxError> {
+    pub fn evaluate(&mut self, expr: &Expr) -> Result<Lit, LoxResult> {
         expr.accept(self)
     }
 
-    pub fn execute(&mut self, statement: &Stmt) -> Result<(), LoxError> {
+    pub fn execute(&mut self, statement: &Stmt) -> Result<(), LoxResult> {
         statement.accept(self)
     }
 
@@ -202,7 +202,7 @@ impl Interpreter {
         &mut self,
         statements: &[Stmt],
         environment: Environment,
-    ) -> Result<(), LoxError> {
+    ) -> Result<(), LoxResult> {
         // Because we have to actually change the pointer itself, not the value that it's pointing to
         let previous = self.environment.clone();
         self.environment = Rc::new(RefCell::new(environment));

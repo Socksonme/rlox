@@ -1,4 +1,4 @@
-use crate::{error::LoxError, lit::*, token::Token, token_type::*};
+use crate::{error::LoxResult, lit::*, token::Token, token_type::*};
 
 pub struct Scanner {
     source: String,
@@ -19,7 +19,7 @@ impl Scanner {
         }
     }
 
-    pub fn scan_tokens(&mut self) -> Result<Vec<Token>, LoxError> {
+    pub fn scan_tokens(&mut self) -> Result<Vec<Token>, LoxResult> {
         let mut had_error = None;
 
         while !self.is_at_end() {
@@ -41,7 +41,7 @@ impl Scanner {
         }
     }
 
-    pub fn scan_token(&mut self) -> Result<(), LoxError> {
+    pub fn scan_token(&mut self) -> Result<(), LoxResult> {
         let c = if let Some(c) = self.bump() {
             c
         } else {
@@ -121,13 +121,13 @@ impl Scanner {
                 self.identifier()?;
             }
             _ => {
-                return Err(LoxError::error(self.line, "Unexpected character."));
+                return Err(LoxResult::error(self.line, "Unexpected character."));
             }
         }
         Ok(())
     }
 
-    fn scan_comment(&mut self) -> Result<(), LoxError> {
+    fn scan_comment(&mut self) -> Result<(), LoxResult> {
         loop {
             match self.peek() {
                 Some('*') => {
@@ -146,7 +146,7 @@ impl Scanner {
                     self.line += 1;
                 }
                 None => {
-                    return Err(LoxError::error(
+                    return Err(LoxResult::error(
                         self.line,
                         "Unterminated multi-line comment.",
                     ));
@@ -206,7 +206,7 @@ impl Scanner {
         Some(self.source.chars().nth(self.current + 1).unwrap())
     }
 
-    pub fn string(&mut self) -> Result<(), LoxError> {
+    pub fn string(&mut self) -> Result<(), LoxResult> {
         while let Some(pk) = self.peek() {
             match pk {
                 '"' => break,
@@ -217,7 +217,7 @@ impl Scanner {
         }
         // If not at the end, then guranteed next to to be '"'
         if self.is_at_end() {
-            return Err(LoxError::error(self.line, "Unterminated String."));
+            return Err(LoxResult::error(self.line, "Unterminated String."));
         }
         // TODO: Handle escape sequences such ads "\\" or "\n" etc.
         self.advance();
@@ -226,7 +226,7 @@ impl Scanner {
         Ok(())
     }
 
-    fn identifier(&mut self) -> Result<(), LoxError> {
+    fn identifier(&mut self) -> Result<(), LoxResult> {
         while self.peek().map_or(false, |c| c.is_alphanumeric()) {
             self.advance();
         }
@@ -241,7 +241,7 @@ impl Scanner {
         Ok(())
     }
 
-    pub fn number(&mut self) -> Result<(), LoxError> {
+    pub fn number(&mut self) -> Result<(), LoxResult> {
         while let Some(c) = self.peek() {
             match c {
                 c if c.is_numeric() => {
