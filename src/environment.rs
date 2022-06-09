@@ -53,6 +53,8 @@ impl Environment {
         if let Entry::Occupied(mut ent) = self.values.entry(name.lexeme.clone()) {
             ent.insert(value);
             Ok(())
+        } else if let Some(enclosing) = &self.enclosing {
+            enclosing.borrow_mut().assign(name, value)
         } else {
             Err(LoxError::runtime_error(
                 name.clone(),

@@ -202,7 +202,6 @@ impl Interpreter {
         // Because we have to actually change the pointer itself, not the value that it's pointing to
         let previous = self.environment.clone();
         self.environment = Rc::new(RefCell::new(environment));
-
         let result = statements.iter().try_for_each(|s| self.execute(s));
         self.environment = previous;
         result
