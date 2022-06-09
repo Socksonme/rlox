@@ -198,7 +198,11 @@ impl Interpreter {
         statement.accept(self)
     }
 
-    fn execute_block(&mut self, statements: &[Stmt], environment: Environment) -> Result<(), LoxError> {
+    fn execute_block(
+        &mut self,
+        statements: &[Stmt],
+        environment: Environment,
+    ) -> Result<(), LoxError> {
         // Because we have to actually change the pointer itself, not the value that it's pointing to
         let previous = self.environment.clone();
         self.environment = Rc::new(RefCell::new(environment));
