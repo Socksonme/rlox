@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
+use ghost_cell::{GhostCell, GhostToken};
 
 use crate::environment::Environment;
 use crate::error::LoxResult;
@@ -8,17 +9,11 @@ use crate::lit::*;
 use crate::stmt::*;
 use crate::token_type::TokenType;
 
-pub struct Interpreter {
-    environment: Rc<RefCell<Environment>>,
+pub struct Interpreter<'brand, 'environment> {
+    environment: Environment<'brand, 'environment>,
 }
 
-impl Default for Interpreter {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl StmtVisitor<()> for Interpreter {
+impl<'brand, 'environment> StmtVisitor<()> for Interpreter<'brand, 'environment> {
     fn visit_while_stmt(&mut self, stmt: &WhileStmt) -> Result<(), LoxResult> {
         while self.evaluate(&stmt.condition)?.is_truthy() {
             self.execute(&stmt.body)?;
@@ -37,7 +32,7 @@ impl StmtVisitor<()> for Interpreter {
 
     fn visit_block_stmt(&mut self, stmt: &BlockStmt) -> Result<(), LoxResult> {
         // Otheriwse you borrow non-mutably then mutably
-        let env = Environment::new_with_enclosing(self.environment.clone());
+        let env = Environment::new_with_enclosing(&mut self.environment);
         self.execute_block(&stmt.statements, env)
     }
     fn visit_expression_stmt(&mut self, stmt: &ExpressionStmt) -> Result<(), LoxResult> {
@@ -57,13 +52,12 @@ impl StmtVisitor<()> for Interpreter {
         };
 
         self.environment
-            .borrow_mut()
             .define(&stmt.name.lexeme, value.unwrap_or(Lit::Nil));
         Ok(())
     }
 }
 
-impl ExprVisitor<Lit> for Interpreter {
+impl<'brand, 'environment> ExprVisitor<Lit> for Interpreter<'brand, 'environment> {
     fn visit_logical_expr(&mut self, expr: &LogicalExpr) -> Result<Lit, LoxResult> {
         let left = self.evaluate(&expr.left)?;
 
@@ -172,21 +166,20 @@ impl ExprVisitor<Lit> for Interpreter {
         Ok(expr.value.clone().unwrap())
     }
     fn visit_variable_expr(&mut self, expr: &VariableExpr) -> Result<Lit, LoxResult> {
-        self.environment.borrow().get(&expr.name)
+        self.environment.get(&expr.name)
     }
     fn visit_assign_expr(&mut self, expr: &AssignExpr) -> Result<Lit, LoxResult> {
         let value = self.evaluate(&expr.value)?;
         self.environment
-            .borrow_mut()
             .assign(&expr.name, value.clone())?;
         Ok(value)
     }
 }
 
-impl Interpreter {
-    pub fn new() -> Self {
+impl<'brand, 'environment> Interpreter<'brand, 'environment> {
+    pub fn new(token: GhostToken<'brand>) -> Self {
         Self {
-            environment: Rc::new(RefCell::new(Environment::new())),
+            environment: Environment::new(&mut token),
         }
     }
 
@@ -204,8 +197,8 @@ impl Interpreter {
         environment: Environment,
     ) -> Result<(), LoxResult> {
         // Because we have to actually change the pointer itself, not the value that it's pointing to
-        let previous = self.environment.clone();
-        self.environment = Rc::new(RefCell::new(environment));
+        let previous = self.environment;
+        self.environment = environment;
         let result = statements.iter().try_for_each(|s| self.execute(s));
         self.environment = previous;
         result

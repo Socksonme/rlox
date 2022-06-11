@@ -9,6 +9,7 @@ pub mod scanner;
 pub mod stmt;
 pub mod token;
 pub mod token_type;
+pub mod ref_chain;
 
 use std::{
     env::args,
@@ -18,32 +19,35 @@ use std::{
 
 //use ast_printer::AstPrinter;
 use error::*;
+use ghost_cell::GhostToken;
 use interpreter::*;
 use parser::Parser;
 use scanner::*;
 
 fn main() {
     let args = args().collect::<Vec<String>>();
-    let mut lox = Lox::new(Interpreter::new());
-    match args.len() {
-        1 => {
-            lox.run_prompt().unwrap();
+    GhostToken::new(|mut token| {
+        let mut lox = Lox::new(Interpreter::new(token));
+        match args.len() {
+            1 => {
+                lox.run_prompt().unwrap();
+            }
+            2 => {
+                lox.run_file(&args[1]).expect("Unable to open file");
+            }
+            _ => {
+                println!("Usage: rlox [SCRIPT]");
+                std::process::exit(64);
+            }
         }
-        2 => {
-            lox.run_file(&args[1]).expect("Unable to open file");
-        }
-        _ => {
-            println!("Usage: rlox [SCRIPT]");
-            std::process::exit(64);
-        }
-    }
+    });
 }
 
-struct Lox {
-    interpreter: Interpreter,
+struct Lox<'brand, 'a> {
+    interpreter: Interpreter<'brand, 'a>,
 }
 
-impl Lox {
+impl<'brand, 'a> Lox<'brand, 'a> {
     pub fn new(interpreter: Interpreter) -> Self {
         Self { interpreter }
     }
