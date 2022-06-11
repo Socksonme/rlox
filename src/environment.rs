@@ -27,6 +27,7 @@ impl<'brand, 'enclosing> Environment<'brand, 'enclosing> {
         self.0.get_mut().insert(name.to_string(), value);
     }
 
+    // TODO: This has to be done through Entry/RefChain itself?
     pub fn get(&self, name: &Token) -> Result<Lit, LoxResult> {
         if let Some(lit) = self.0.get().get(&name.lexeme) {
             return Ok(lit.clone());
@@ -40,6 +41,7 @@ impl<'brand, 'enclosing> Environment<'brand, 'enclosing> {
         ))
     }
 
+    // TODO: This has to be done through Entry/RefChain itself as well?
     pub fn assign(&mut self, name: &Token, value: Lit) -> Result<(), LoxResult> {
         if let hash_map::Entry::Occupied(mut ent) = self.values.entry(name.lexeme.clone()) {
             ent.insert(value);

@@ -1,7 +1,7 @@
 use ghost_cell::{GhostCell, GhostToken};
 
 pub struct Entry<'brand, 'prev, T> {
-    data: GhostCell<'brand, T>,
+    pub data: GhostCell<'brand, T>,
     pub prev: Option<&'prev Entry<'brand, 'prev, T>>,
 }
 
