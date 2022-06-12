@@ -1,9 +1,14 @@
 use std::fmt::Display;
+
+use crate::{
+    interpreter::Interpreter, lox_callable::LoxCallable, lox_function::LoxFunction, LoxResult,
+};
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lit {
     Num(f64),
     Str(String),
     Bool(bool),
+    Func(LoxFunction),
     Nil,
 }
 
@@ -24,6 +29,9 @@ impl Display for Lit {
                 }
                 Lit::Nil => {
                     String::from("nil")
+                }
+                Lit::Func(_) => {
+                    String::from("<func>")
                 }
             }
         )

@@ -5,6 +5,7 @@ use crate::lit::*;
 pub enum Expr {
     Assign(AssignExpr),
     Binary(BinaryExpr),
+    Call(CallExpr),
     Grouping(GroupingExpr),
     Literal(LiteralExpr),
     Logical(LogicalExpr),
@@ -19,6 +20,9 @@ impl Expr {
                 expr.accept(visitor)
             }
             Expr::Binary(expr) => {
+                expr.accept(visitor)
+            }
+            Expr::Call(expr) => {
                 expr.accept(visitor)
             }
             Expr::Grouping(expr) => {
@@ -51,6 +55,12 @@ pub struct BinaryExpr {
     pub right: Box<Expr>,
 }
 
+pub struct CallExpr {
+    pub callee: Box<Expr>,
+    pub paren: Token,
+    pub arguments: Vec<Expr>,
+}
+
 pub struct GroupingExpr {
     pub expression: Box<Expr>,
 }
@@ -77,6 +87,7 @@ pub struct VariableExpr {
 pub trait ExprVisitor<T> {
     fn visit_assign_expr(&mut self, expr: &AssignExpr) -> Result<T, LoxResult>;
     fn visit_binary_expr(&mut self, expr: &BinaryExpr) -> Result<T, LoxResult>;
+    fn visit_call_expr(&mut self, expr: &CallExpr) -> Result<T, LoxResult>;
     fn visit_grouping_expr(&mut self, expr: &GroupingExpr) -> Result<T, LoxResult>;
     fn visit_literal_expr(&mut self, expr: &LiteralExpr) -> Result<T, LoxResult>;
     fn visit_logical_expr(&mut self, expr: &LogicalExpr) -> Result<T, LoxResult>;
@@ -93,6 +104,12 @@ impl AssignExpr {
 impl BinaryExpr {
     pub fn accept<T>(&self, visitor: &mut dyn ExprVisitor<T>) -> Result<T, LoxResult> {
         visitor.visit_binary_expr(self)
+    }
+}
+
+impl CallExpr {
+    pub fn accept<T>(&self, visitor: &mut dyn ExprVisitor<T>) -> Result<T, LoxResult> {
+        visitor.visit_call_expr(self)
     }
 }
 

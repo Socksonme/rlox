@@ -37,11 +37,11 @@ impl LoxResult {
 
     pub fn report(&self, loc: &str) {
         match self {
-            LoxResult::Error {line, message} => {
+            LoxResult::Error { line, message } => {
                 eprintln!("[line: {}] Error{}: {}", line, loc, message);
             }
-            LoxResult::ParseError {token, message} |
-            LoxResult::RuntimeError {token, message} => {
+            LoxResult::ParseError { token, message }
+            | LoxResult::RuntimeError { token, message } => {
                 if token.is(TokenType::Eof) {
                     eprintln!("{} at end {}", token.line, message);
                 } else {
