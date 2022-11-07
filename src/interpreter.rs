@@ -1,3 +1,4 @@
+use std::cell::Ref;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -6,10 +7,13 @@ use crate::error::LoxResult;
 use crate::expr::*;
 use crate::lit::*;
 use crate::lox_callable::LoxCallable;
+use crate::lox_native::LoxNative;
+use crate::lox_native::NativeClock;
 use crate::stmt::*;
 use crate::token_type::TokenType;
 
 pub struct Interpreter {
+    pub globals: Rc<RefCell<Environment>>,
     environment: Rc<RefCell<Environment>>,
 }
 
@@ -20,6 +24,9 @@ impl Default for Interpreter {
 }
 
 impl StmtVisitor<()> for Interpreter {
+    fn visit_function_stmt(&mut self, stmt: &FunctionStmt) -> Result<(), LoxResult> {
+        Ok(())
+    }
     fn visit_while_stmt(&mut self, stmt: &WhileStmt) -> Result<(), LoxResult> {
         while self.evaluate(&stmt.condition)?.is_truthy() {
             self.execute(&stmt.body)?;
@@ -73,19 +80,25 @@ impl ExprVisitor<Lit> for Interpreter {
             arguments.push(self.evaluate(argument)?);
         }
 
-        if let Lit::Func(mut func) = callee {
-            if arguments.len() != func.arity() {
+        let callfunc: Option<Rc<dyn LoxCallable>> = match callee {
+            Lit::Func(f) => Some(f),
+            Lit::Native(n) => Some(n.func.clone()),
+            _ => None,
+        };
+
+        if let Some(callfunc) = callfunc {
+            if arguments.len() != callfunc.arity() {
                 return Err(LoxResult::runtime_error(
                     expr.paren.clone(),
                     &format!(
                         "Expected {} arguments, but got {}",
-                        func.arity(),
+                        callfunc.arity(),
                         arguments.len()
                     ),
                 ));
             }
 
-            Ok(func.call(self, arguments))
+            callfunc.call(self, arguments)
         } else {
             Err(LoxResult::runtime_error(
                 expr.paren.clone(),
@@ -215,8 +228,18 @@ impl ExprVisitor<Lit> for Interpreter {
 
 impl Interpreter {
     pub fn new() -> Self {
+        let globals = Rc::new(RefCell::new(Environment::new()));
+
+        globals.borrow_mut().define(
+            "clock",
+            Lit::Native(Rc::new(LoxNative {
+                func: Rc::new(NativeClock {}),
+            })),
+        );
+
         Self {
-            environment: Rc::new(RefCell::new(Environment::new())),
+            globals: Rc::clone(&globals),
+            environment: Rc::clone(&globals),
         }
     }
 

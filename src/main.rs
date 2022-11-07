@@ -6,6 +6,7 @@ pub mod interpreter;
 pub mod lit;
 pub mod lox_callable;
 pub mod lox_function;
+pub mod lox_native;
 pub mod parser;
 pub mod scanner;
 pub mod stmt;

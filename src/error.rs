@@ -5,6 +5,7 @@ pub enum LoxResult {
     ParseError { token: Token, message: String },
     RuntimeError { token: Token, message: String },
     Error { line: usize, message: String },
+    SystemError { message: String },
 }
 
 impl LoxResult {
@@ -35,6 +36,14 @@ impl LoxResult {
         err
     }
 
+    pub fn system_error(message: &str) -> LoxResult {
+        let err = LoxResult::SystemError {
+            message: message.to_string(),
+        };
+        err.report("");
+        err
+    }
+
     pub fn report(&self, loc: &str) {
         match self {
             LoxResult::Error { line, message } => {
@@ -47,6 +56,9 @@ impl LoxResult {
                 } else {
                     eprintln!("{} at '{}' {}", token.line, token, message);
                 }
+            }
+            LoxResult::SystemError { message } => {
+                eprintln!("System Error: {}", message);
             }
         }
     }

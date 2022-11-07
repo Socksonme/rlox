@@ -55,14 +55,14 @@ impl Parser {
             Some(self.expression_statement()?)
         };
 
-        let condition = if self.check(&TokenType::Semicolon) {
+        let condition = if self.check(TokenType::Semicolon) {
             None
         } else {
             Some(self.expression()?)
         };
         self.consume(TokenType::Semicolon, "Expect ';' after  loop condition.")?;
 
-        let increment = if self.check(&TokenType::RightParen) {
+        let increment = if self.check(TokenType::RightParen) {
             None
         } else {
             Some(self.expression()?)
@@ -139,10 +139,45 @@ impl Parser {
         self.consume(TokenType::Semicolon, "Expected ';' after value;")?;
         Ok(Stmt::Expression(ExpressionStmt { expression: value }))
     }
+    fn function(&mut self, kind: &str) -> Result<Stmt, LoxResult> {
+        let name = self.consume(TokenType::Identifier, &format!("Expect {} name", kind))?;
+        self.consume(
+            TokenType::LeftParen,
+            &format!("Expect '(' after {} name.", kind),
+        )?;
+
+        let mut params = Vec::new();
+        if !self.check(TokenType::RightParen) {
+            params.push(self.consume(TokenType::Identifier, "Expect paramter name.")?);
+            while self.matches(&[TokenType::Comma]) {
+                if params.len() >= 255 {
+                    if !self.had_error {
+                        let peek = self.peek();
+                        self.error(peek, "Can't have more than 255 parameters.");
+                    }
+                }
+                params.push(self.consume(TokenType::Identifier, "Expect paramater name.")?);
+            }
+        }
+
+        self.consume(TokenType::RightParen, "Expect ')' after parameters.")?;
+
+        self.consume(
+            TokenType::LeftBrace,
+            &format!("Expect '{{' before {} body.", kind),
+        )?;
+
+        let body = self.block()?;
+        Ok(Stmt::Function(FunctionStmt {
+            name,
+            params,
+            body,
+        }))
+    }
 
     fn block(&mut self) -> Result<Vec<Stmt>, LoxResult> {
         let mut statements = Vec::new();
-        while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
+        while !self.check(TokenType::RightBrace) && !self.is_at_end() {
             statements.push(self.declaration()?);
         }
         self.consume(TokenType::RightBrace, "Expect '}' after block.")?;
@@ -154,7 +189,9 @@ impl Parser {
     }
 
     fn declaration(&mut self) -> Result<Stmt, LoxResult> {
-        let result = if self.matches(&[TokenType::Var]) {
+        let result = if self.matches(&[TokenType::Fun]) {
+            self.function("fucntion")
+        } else if self.matches(&[TokenType::Var]) {
             self.var_declaration()
         } else {
             self.statement()
@@ -313,7 +350,7 @@ impl Parser {
 
     fn finish_call(&mut self, callee: Expr) -> Result<Expr, LoxResult> {
         let mut arguments = vec![];
-        if !self.check(&TokenType::RightParen) {
+        if !self.check(TokenType::RightParen) {
             arguments.push(self.expression()?);
             while self.matches(&[TokenType::Comma]) {
                 if arguments.len() >= 255 {
@@ -383,7 +420,7 @@ impl Parser {
     }
 
     fn consume(&mut self, tt: TokenType, message: &str) -> Result<Token, LoxResult> {
-        if self.check(&tt) {
+        if self.check(tt) {
             Ok(self.advance())
         } else {
             let p = self.peek();
@@ -423,7 +460,7 @@ impl Parser {
 
     fn matches(&mut self, ttypes: &[TokenType]) -> bool {
         for tt in ttypes {
-            if self.check(tt) {
+            if self.check(tt.clone()) {
                 self.advance();
                 return true;
             }
@@ -436,11 +473,11 @@ impl Parser {
         !self.had_error
     }
 
-    fn check(&self, tt: &TokenType) -> bool {
+    fn check(&self, tt: TokenType) -> bool {
         if self.is_at_end() {
             false
         } else {
-            self.peek().ttype == *tt
+            self.peek().ttype == tt
         }
     }
 
